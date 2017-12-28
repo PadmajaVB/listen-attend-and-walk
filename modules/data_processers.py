@@ -2,26 +2,19 @@
 """
 data_processers
 
-@author: hongyuan
 """
 
 import pickle
 import time
 import numpy
 import theano
-import codecs
 from theano import sandbox
 import theano.tensor as tensor
 import os
 import scipy.io
 from collections import defaultdict
 from theano.tensor.shared_randomstreams import RandomStreams
-import modules.utils
-import sys
-from importlib import reload
-
-reload(sys)
-# sys.setdefaultencoding('utf8')
+import utils
 
 dtype=theano.config.floatX
 
@@ -32,14 +25,14 @@ class DataProcess(object):
     '''
     def __init__(self, path_rawdata=None):
         #
-        print ("initialize the data processer ... ")
+        print "initialize the data processer ... "
         if path_rawdata:
             self.path_rawdata = path_rawdata
         else:
             self.path_rawdata = './data/'
         #
         #
-        with codecs.open(self.path_rawdata+'databag3.pickle','r',encoding='utf8') as f:
+        with open(self.path_rawdata+'databag3.pickle','r') as f:
             raw_data = pickle.load(f)
         with open(self.path_rawdata+'valselect.pickle', 'r') as f:
             devset = pickle.load(f)
@@ -57,7 +50,7 @@ class DataProcess(object):
         # pre-defined world representations
         # 6 + 3 * (8+3+6+1) = 78
         #
-        # self.names_map = raw_data.keys()
+        #self.names_map = raw_data.keys()
         self.names_map = ['grid', 'jelly', 'l']
         '''
         names_map should be ['grid', 'jelly', 'l']
@@ -191,7 +184,7 @@ class DataProcess(object):
         # finished processing !
     #
     def creat_log(self, log_dict):
-        print ("creating training log file ... ")
+        print "creating training log file ... "
         current_log_file = os.path.abspath(
             log_dict['log_file']
         )
@@ -215,7 +208,7 @@ class DataProcess(object):
     #
 
     def continue_log(self, log_dict):
-        print ("continue tracking log ... ")
+        print "continue tracking log ... "
         current_log_file = os.path.abspath(
             log_dict['log_file']
         )
@@ -235,7 +228,7 @@ class DataProcess(object):
             f.write('\n')
 
     def track_log(self, log_dict):
-        #print ("recording training log ... ")
+        #print "recording training log ... "
         '''
         log dict keys : log_file, compile_time, things need to be tracked
         '''
@@ -246,7 +239,7 @@ class DataProcess(object):
             self.continue_log(log_dict)
     #
     def finish_log(self, log_dict):
-        print ("finish tracking log ... ")
+        print "finish tracking log ... "
         current_log_file = os.path.abspath(
             log_dict['log_file']
         )

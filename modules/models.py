@@ -7,7 +7,6 @@ we use :
 3) LSTM as decoder
 4) deep-output layer
 
-@author: hongyuan
 """
 
 import pickle
@@ -20,7 +19,7 @@ import os
 import scipy.io
 from collections import defaultdict
 from theano.tensor.shared_randomstreams import RandomStreams
-import modules.utils
+import utils
 
 dtype=theano.config.floatX
 
@@ -50,7 +49,7 @@ class NeuralWalker(object):
         )
         #
         #
-        print ("dim of model, world, lang and action is : ", self.dim_model, self.dim_world, self.dim_lang, self.dim_action)
+        print "dim of model, world, lang and action is : ", self.dim_model, self.dim_world, self.dim_lang, self.dim_action
         #
         self.Emb_lang_sparse = theano.shared(
             numpy.identity(self.dim_lang, dtype=dtype),
@@ -251,7 +250,7 @@ class NeuralWalker(object):
         return ht, ht_dropout, ct, zt
 
     def compute_loss(self, seq_lang, seq_world, seq_action):
-        print ("computing the loss function of Neural Walker ... ")
+        print "computing the loss function of Neural Walker ... "
         xt_lang_forward = self.Emb_enc_forward[
             seq_lang, :
         ]
@@ -329,14 +328,14 @@ class NeuralWalker(object):
             self.cost, self.params
         )
         #
-        print ("checking the type of variables ... ")
-        print ("type of cost is ", self.cost.dtype)
+        print "checking the type of variables ... "
+        print "type of cost is ", self.cost.dtype
         for param, gparam in zip(self.params, self.grad_params):
-            print ("shape and type of param and grad_param for this variable are : ", (param.name, param.get_value().shape, param.dtype, gparam.dtype))
+            print "shape and type of param and grad_param for this variable are : ", (param.name, param.get_value().shape, param.dtype, gparam.dtype)
         #
 
     def get_model(self):
-        print ("getting model ... ")
+        print "getting model ... "
         model_dict = {}
         for param in self.params:
             model_dict[param.name] = numpy.copy(
@@ -346,7 +345,7 @@ class NeuralWalker(object):
         return model_dict
 
     def save_model(self, save_file):
-        print ("saving model ... ")
+        print "saving model ... "
         model_dict = {}
         for param in self.params:
             model_dict[param.name] = numpy.copy(

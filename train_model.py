@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+"""
+run file for neural walker
+
+"""
 
 import pickle
 import time

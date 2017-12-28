@@ -2,7 +2,6 @@
 """
 useful optimizers
 
-@author: hongyuan
 """
 
 import pickle
@@ -15,14 +14,14 @@ import os
 import scipy.io
 from collections import defaultdict
 from theano.tensor.shared_randomstreams import RandomStreams
-import modules.utils
+import utils
 
 dtype=theano.config.floatX
 
 class SGD(object):
     # Adam optimizer
     def __init__(self, sgd_params=None):
-        print ("creating SGD optimizer ... ")
+        print "creating SGD optimizer ... "
         # set hyper params, and use the values in paper as default
         if sgd_params == None:
             self.alpha = theano.shared(numpy.float32(0.5), 'alpha')
@@ -34,19 +33,19 @@ class SGD(object):
         #self.m_params, self.v_params = [], []
     #
     def compute_updates(self, params, grad_params):
-        print ("computing updates ... ")
+        print "computing updates ... "
         for param, grad_param in zip(params, grad_params):
             param_t = param - ( self.alpha / tensor.sqrt(self.t_step) ) * grad_param
             #
             self.updates.append( (param, param_t) )
         #self.updates.append( (self.t_step, self.t_step+1.0) )
-        print ("updates computed ! ")
+        print "updates computed ! "
 
 
 class Adam(object):
     # Adam optimizer
     def __init__(self, adam_params=None):
-        print ("creating Adam optimizer ... ")
+        print "creating Adam optimizer ... "
         # set hyper params, and use the values in paper as default
         if adam_params == None:
             self.alpha = theano.shared(numpy.float32(1e-3), 'alpha')
@@ -72,7 +71,7 @@ class Adam(object):
         self.m_params, self.v_params = [], []
     #
     def compute_updates(self, params, grad_params):
-        print ("computing updates ... ")
+        print "computing updates ... "
         for param in params:
             param_shape = numpy.shape(param.get_value())
             self.m_params.append(
@@ -93,4 +92,4 @@ class Adam(object):
             self.updates.append( (v_param, v_0) )
         self.updates.append( (self.t_step, self.t_step+1.0) )
         self.updates.append( (self.beta_t, self.beta_t*self.decay) )
-        print ("updates computed ! ")
+        print "updates computed ! "

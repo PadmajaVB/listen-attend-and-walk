@@ -7,7 +7,6 @@ we use :
 3) LSTM as decoder
 4) deep-output layer
 
-@author: hongyuan
 """
 
 import pickle
@@ -20,9 +19,9 @@ import os
 import scipy.io
 from collections import defaultdict
 from theano.tensor.shared_randomstreams import RandomStreams
-import modules.utils as utils
-import modules.models as models
-import modules.optimizers as optimizers
+import utils
+import models
+import optimizers
 
 dtype=theano.config.floatX
 
@@ -30,7 +29,7 @@ dtype=theano.config.floatX
 class NeuralWalkerTrainer(object):
     #
     def __init__(self, model_settings):
-        print ("building trainer ... ")
+        print "building trainer ... "
         self.seq_lang = tensor.ivector(name='seq_lang')
         self.seq_world = tensor.matrix(
             name='seq_world', dtype=dtype
