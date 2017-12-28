@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+
 """
 run the neural walker model
 
 """
+
 
 import pickle
 import time
