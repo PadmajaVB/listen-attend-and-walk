@@ -18,9 +18,9 @@ from collections import defaultdict
 from theano.tensor.shared_randomstreams import RandomStreams
 import modules.utils
 import sys
-from importlib import reload
+# from importlib import reload
 
-reload(sys)
+# reload(sys)
 # sys.setdefaultencoding('utf8')
 
 dtype=theano.config.floatX
