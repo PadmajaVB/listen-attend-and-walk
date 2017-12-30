@@ -17,7 +17,7 @@ Language used : Python 2.7
 ### Train model
 
 ```
-python train_model.py --options
+python train_model.py 
 ```
 
 ### Test model
