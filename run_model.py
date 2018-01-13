@@ -82,12 +82,12 @@ def train_model(input_trainer):
     compile_start = time.time()
 
     model_settings = {
-        'dim_lang': data_process.dim_lang,
-        'dim_world': data_process.dim_world,
-        'dim_action': data_process.dim_action,
-        'dim_model': input_trainer['dim_model'],
-        'optimizer': input_trainer['optimizer'],
-        'drop_out_rate': input_trainer['drop_out_rate']
+        'dim_lang': data_process.dim_lang, # 524
+        'dim_world': data_process.dim_world, # 78
+        'dim_action': data_process.dim_action, # 4
+        'dim_model': input_trainer['dim_model'],# 100
+        'optimizer': input_trainer['optimizer'], # adam
+        'drop_out_rate': input_trainer['drop_out_rate'] # 0.9
     }
 
     trainer = trainers.NeuralWalkerTrainer(

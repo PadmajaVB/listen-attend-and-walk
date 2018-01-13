@@ -56,10 +56,12 @@ class NeuralWalkerTrainer(object):
         else:
             self.optimizer = optimizers.SGD()
         #
+
         self.optimizer.compute_updates(
             self.neural_walker.params,
             self.neural_walker.grad_params
         )
+        # print("self.neural_walker.grad_params=",type(self.neural_walker.grad_params))
         #
         self.model_learn = theano.function(
             inputs = [

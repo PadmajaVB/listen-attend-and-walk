@@ -38,7 +38,7 @@ class SGD(object):
             param_t = param - ( self.alpha / tensor.sqrt(self.t_step) ) * grad_param
             #
             self.updates.append( (param, param_t) )
-        #self.updates.append( (self.t_step, self.t_step+1.0) )
+        #  self.updates.append( (self.t_step, self.t_step+1.0) )
         print "updates computed ! "
 
 

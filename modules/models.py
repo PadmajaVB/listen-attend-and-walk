@@ -30,20 +30,33 @@ class NeuralWalker(object):
     '''
     def __init__(self, model_settings):
         #
-        self.dim_model = model_settings['dim_model']
-        self.dim_world = model_settings['dim_world']
+        self.dim_model = model_settings['dim_model']  # 100
+        self.dim_world = model_settings['dim_world']  # 78
         # it is the dim of raw world input
         # raw world input is NOT one-hot vector
-        self.dim_lang = model_settings['dim_lang']
-        self.dim_action = model_settings['dim_action']
-        #
+        self.dim_lang = model_settings['dim_lang']  # 524
+        self.dim_action = model_settings['dim_action']  # 4
+        # theano.tensor.var.TensorVariable ,.tensor.var.TensorVariable
         # drop_out related stuff
-        self.drop_out_rate = model_settings['drop_out_rate']
+        self.drop_out_rate = model_settings['drop_out_rate'] # 0.9
         assert(
             self.drop_out_rate <= numpy.float32(1.0)
         )
         self.rnd_gen = RandomStreams(seed=12345)
-        self.drop_out_layer = self.rnd_gen.uniform((self.dim_model,)) < self.drop_out_rate
+        self.drop_out_layer = self.rnd_gen.uniform((self.dim_model,)) < self.drop_out_rate  # List of boolean variable of shape [100]
+        # print "drop_out_layer=",self.drop_out_layer.eval()  # [100]
+
+        """
+        drop_out_layer= [ True  True False  True  True  True  True  True  True  True  True  True
+                        True  True  True False  True  True  True False  True  True  True  True
+                        True  True  True  True  True  True  True False  True  True  True  True
+                        True  True  True  True  True  True  True False  True False  True False
+                        True  True  True  True  True  True  True  True  True False  True  True
+                        True  True  True  True  True  True  True  True  True  True  True  True
+                        True  True  True  True  True  True  True False  True  True  True  True
+                        True  True  True  True  True  True  True False  True  True  True  True
+                        False  True  True  True]
+        """
         self.drop_out_layer_gen = theano.function(
             [], self.drop_out_layer
         )
@@ -51,84 +64,119 @@ class NeuralWalker(object):
         #
         print "dim of model, world, lang and action is : ", self.dim_model, self.dim_world, self.dim_lang, self.dim_action
         #
+        """ identity matrix of shape [524*524] """
         self.Emb_lang_sparse = theano.shared(
             numpy.identity(self.dim_lang, dtype=dtype),
             name='Emb_lang_sparse'
         )
+        # print "self.Emb_lang_sparse=",self.Emb_lang_sparse.shape.eval()
         # this is the I-matrix that stands for idx of tokens
         #
+        """ Matrix of shape [524*100] """
         self.Emb_enc_forward = theano.shared(
             utils.sample_weights(self.dim_lang, self.dim_model),
             name='Emb_enc_forward'
         )
+        # print "self.Emb_enc_forward=",self.Emb_enc_forward.eval()," ", self.Emb_enc_forward.shape.eval()
+
+        """ Matrix of shape [200*400] """
         self.W_enc_forward = theano.shared(
             utils.sample_weights(
                 2*self.dim_model, 4*self.dim_model
             ), name='W_enc_forward'
         )
+        # print "self.W_enc_forward=",self.W_enc_forward.eval()," ", self.W_enc_forward.shape.eval()
+
+        """ Matrix of shape [400] """
         self.b_enc_forward = theano.shared(
             numpy.zeros((4*self.dim_model, ), dtype=dtype),
             name='b_enc_forward'
         )
+        # print "self.b_enc_forward=",self.b_enc_forward.eval()," ", self.b_enc_forward.shape.eval()
         #
+        """ Matrix of shape [524*100] """
         self.Emb_enc_backward = theano.shared(
             utils.sample_weights(self.dim_lang, self.dim_model),
             name='Emb_enc_backward'
         )
+
+        """ Matrix of shape [200*400] """
         self.W_enc_backward = theano.shared(
             utils.sample_weights(
                 2*self.dim_model, 4*self.dim_model
             ), name='W_enc_backward'
         )
+
+        """ Matrix of shape [400] """
         self.b_enc_backward = theano.shared(
             numpy.zeros((4*self.dim_model, ), dtype=dtype),
             name='b_enc_backward'
         )
         #
+        """ Matrix of shape [724*100] """
         self.W_att_scope = theano.shared(
             utils.sample_weights(
                 self.dim_lang+2*self.dim_model, self.dim_model
             ), name='W_att_scope'
         )
+
+        """ Matrix of shape [100*100] """
         self.W_att_target = theano.shared(
             utils.sample_weights(
                 self.dim_model, self.dim_model
             ), name='W_att_target'
         )
+        # print "self.W_att_target=",self.W_att_target.eval()," ", self.W_att_target.shape.eval()
+
+        """ Matrix of shape [100] """
         self.b_att = theano.shared(
             numpy.zeros((self.dim_model, ), dtype=dtype),
             name='b_att'
         )
         #
+        """ Matrix of shape [78*100] """
         self.Emb_dec = theano.shared(
             utils.sample_weights(self.dim_world, self.dim_model),
             name='Emb_dec'
         )
+
+        """ Matrix of shape [924*400] """
         self.W_dec = theano.shared(
             utils.sample_weights(
                 self.dim_lang+4*self.dim_model, 4*self.dim_model
             ), name='W_dec'
         )
+        # print "self.W_dec=",self.W_dec.eval()," ", self.W_dec.shape.eval()
+
+        """ Matrix of shape [400] """
         self.b_dec = theano.shared(
             numpy.zeros((4*self.dim_model, ), dtype=dtype),
             name='b_dec'
         )
         #
+
+        """ Matrix of shape [824*100] """
         self.W_out_hz = theano.shared(
             utils.sample_weights(
                 self.dim_lang+3*self.dim_model, self.dim_model
             ), name='W_out_hz'
         )
+
+        """ Matrix of shape [100*4] """
         self.W_out = theano.shared(
             utils.sample_weights(
                 self.dim_model, self.dim_action
             ), name='W_out'
         )
         #
+
+        """ Matrix of shape [100] """
         self.c0 = theano.shared(
             numpy.zeros((self.dim_model, ), dtype=dtype),
             name='c0'
         )
+
+        """ Matrix of shape [100] """
         self.h0 = theano.shared(
             numpy.zeros((self.dim_model, ), dtype=dtype),
             name='h0'
@@ -251,9 +299,11 @@ class NeuralWalker(object):
 
     def compute_loss(self, seq_lang, seq_world, seq_action):
         print "computing the loss function of Neural Walker ... "
+        """xt_lang_forward =<class 'theano.tensor.var.TensorVariable'>"""
         xt_lang_forward = self.Emb_enc_forward[
             seq_lang, :
         ]
+
         xt_lang_backward = self.Emb_enc_backward[
             seq_lang, :
         ]
@@ -281,6 +331,7 @@ class NeuralWalker(object):
             non_sequences = None,
             go_backwards = True
         )
+
         #
         self.scope_att = tensor.concatenate(
             [
@@ -329,7 +380,7 @@ class NeuralWalker(object):
         )
         #
         print "checking the type of variables ... "
-        print "type of cost is ", self.cost.dtype
+        print "type of cost is ", self.cost.dtype  # float64
         for param, gparam in zip(self.params, self.grad_params):
             print "shape and type of param and grad_param for this variable are : ", (param.name, param.get_value().shape, param.dtype, gparam.dtype)
         #

@@ -43,7 +43,9 @@ class DataProcess(object):
             # maps is a list
         #
         self.lang2idx = stats['word2ind']
-        self.dim_lang = stats['volsize']
+        # print "LANG************", self.lang2idx
+        self.dim_lang = stats['volsize'] # 524
+        # print ("volsize=",self.dim_lang)
         #
         self.dim_world = 78
         self.dim_action = 4
