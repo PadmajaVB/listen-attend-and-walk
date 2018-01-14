@@ -115,18 +115,24 @@ class DataProcess(object):
         # in map[name_map]
         # with tag = tag_split, i.e., 'train' or 'dev'
         one_data = self.dict_data[tag_split][name_map][idx_data]
+
+        """ list of word indices """
         list_word_idx = [
             self.lang2idx[w] for w in one_data['instruction'] if w in self.lang2idx
         ]
+        # print "\n\nlist_word_index = ", list_word_idx
         self.seq_lang_numpy = numpy.array(
             list_word_idx, dtype=numpy.int32
         )
         # seq_lang finished
         #
+        """ Zero matrix of dim (len(one_data['cleanpath'])*100)"""
         self.seq_world_numpy = numpy.zeros(
             (len(one_data['cleanpath']), self.dim_world),
             dtype=dtype
         )
+
+        """ idx_map is an index of the map i.e grid-0, jelly-1, l-2 """
         idx_map = self.map2idx[
             one_data['map'].lower()
         ]
@@ -147,8 +153,8 @@ class DataProcess(object):
                     )
                     '''
                     note:
-                    for node, we keep it as [0,..,1,..,0] one hoc
-                    but for all directions, the last entry of feature tags if this way is walkable:
+                    for node, we keep it as [0,..,1,..,0] one hot
+                    but for all directions, the last entry of feature tags if this way is walkable: 0
                     1 -- it is blocked
                     '''
                     feat_node = numpy.cast[dtype](

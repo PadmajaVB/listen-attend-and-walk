@@ -99,7 +99,7 @@ def train_model(input_trainer):
 
     #'''
 
-    print "model finished, comilation time is ", round(compile_time, 0)
+    print "model finished, compilation time is ", round(compile_time, 0)
 
     #TODO: start training, define the training functions
     print "building training log ... "
@@ -126,9 +126,9 @@ def train_model(input_trainer):
                     idx_data, name_map, 'train'
                 )
                 cost_numpy = trainer.model_learn(
-                    data_process.seq_lang_numpy,
-                    data_process.seq_world_numpy,
-                    data_process.seq_action_numpy
+                    data_process.seq_lang_numpy,  # list of word indices
+                    data_process.seq_world_numpy,  # matrix of dim (len(one_data['cleanpath'])*100
+                    data_process.seq_action_numpy  # index value of 1 in one hot vector of action
                 )
                 err += cost_numpy
                 if idx_data % 100 == 99:
