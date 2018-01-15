@@ -23,7 +23,8 @@ python train_model.py
 ### Test model
 
 ```
-python test_model.py
+python test_model.py -fp PATH
 ```
+*PATH* stands for the path to the file *model.pkl* which lies within the track folder. This file is created by the end of training.  
 
 This project is built using Hongyuan Mei's [code](https://github.com/HMEIatJHU/NeuralWalker) as base. 
