@@ -2,6 +2,7 @@
 """
 run file for neural walker
 
+@author: hongyuan
 """
 
 import pickle
@@ -23,7 +24,7 @@ import modules.data_processers as data_processers
 import run_model
 import datetime
 import argparse
-
+__author__ = 'Hongyuan Mei'
 
 dtype=theano.config.floatX
 
@@ -73,13 +74,13 @@ def main():
     #
     args = parser.parse_args()
     #
-    #print "args.saveresults : ", args.saveresults
+    #print ("args.saveresults : ", args.saveresults)
     #
     if args.FileData == None:
         args.FileData = None
     #
     assert(args.FilePretrain != None)
-    args.PathPretrain = os.path.abspath(args.PathPretrain)
+    # args.PathPretrain = os.path.abspath(args.PathPretrain)
     if args.MapTest == None:
         args.MapTest = 'l'
     else:
