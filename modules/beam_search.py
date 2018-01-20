@@ -44,7 +44,7 @@ class BeamSearchNeuralWalker(object):
         for param_name in self.model:
             self.model[param_name] = numpy.float32(self.model[param_name])
         #
-        self.dim_model = self.model['Emb_enc_forward'].shape[1]
+        self.dim_model = self.model['Emb_enc_forward'].shape[1]  # Matrix of shape [524*100] => self.dim_model = 100
         #
         # re-set the weights due to drop_out_rate
         self.drop_out_rate = self.model['drop_out_rate']
@@ -54,6 +54,8 @@ class BeamSearchNeuralWalker(object):
         self.model['W_out_hz'][:self.dim_model, :] = numpy.copy(
             self.model['W_out_hz'][:self.dim_model, :] * self.drop_out_rate
         )
+        print "type(model)",type(self.model)
+        print "self.model['W_out_hz'][:self.dim_model, :]=",self.model['W_out_hz'][:self.dim_model, :].shape, "self.model=",type(self.model['W_out_hz'])
         #
         #
         self.ht_encode = numpy.zeros(
@@ -68,10 +70,10 @@ class BeamSearchNeuralWalker(object):
         #
         self.beam_list = []
         self.finish_list = []
-        #self.normalize_mode = settings['normalize_mode']
+        # self.normalize_mode = settings['normalize_mode']
         # whether to normalize the cost over length of sequence
         #
-        #self.lang2idx = settings['lang2idx']
+        # self.lang2idx = settings['lang2idx']
         self.dim_lang = settings['dim_lang']
         self.map = settings['map']
         self.Emb_lang_sparse = numpy.identity(
@@ -103,7 +105,7 @@ class BeamSearchNeuralWalker(object):
         xt_lang_forward = self.model['Emb_enc_forward'][
             self.seq_lang_numpy, :
         ]
-        shape_encode = xt_lang_forward.shape
+        shape_encode = xt_lang_forward.shape  # Matrix of shape [524*100]
         self.ht_enc_forward = numpy.zeros(
             shape_encode, dtype=dtype
         )

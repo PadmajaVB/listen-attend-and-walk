@@ -48,26 +48,27 @@ class DataProcess(object):
         # print ("volsize=",self.dim_lang)
         #
         self.dim_world = 78
-        self.dim_action = 4
+        self.dim_action = 4  # forward, left, right, stop
         # pre-defined world representations
-        # 6 + 3 * (8+3+6+1) = 78
+        # 6 + 4 * (8+3+6+1) = 78
         #
         #self.names_map = raw_data.keys()
         self.names_map = ['grid', 'jelly', 'l']
-        '''
-        names_map should be ['grid', 'jelly', 'l']
-        '''
+
         #
         self.dict_data = {
             'train': {},
             'dev': {}
         }
         #
+
+        """Grid-874 instructions, Jelly-1293 instructions, L-1070 instructions"""
         for name_map in self.names_map:
             self.dict_data['train'][name_map] = []
             self.dict_data['dev'][name_map] = []
             for idx_data, data in enumerate(raw_data[name_map]):
                 if idx_data in devset[name_map]:
+                    """100 instructions per map"""
                     self.dict_data['dev'][name_map].append(data)
                 else:
                     self.dict_data['train'][name_map].append(data)
