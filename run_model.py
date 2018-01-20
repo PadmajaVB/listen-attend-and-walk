@@ -25,14 +25,14 @@ import modules.beam_search as beam_search
 
 dtype=theano.config.floatX
 
-#TODO: function to train seq2seq models
+# TODO: function to train seq2seq models
 def train_model(input_trainer):
     '''
     this function is called to train model
     '''
-    #TODO: pre-settings like random states
+    # TODO: pre-settings like random states
     numpy.random.seed(
-        input_trainer['random_seed']#12345
+        input_trainer['random_seed']  # 12345
     )
     #
     os.system('mkdir -p '+input_trainer['save_file_path'])
@@ -82,12 +82,12 @@ def train_model(input_trainer):
     compile_start = time.time()
 
     model_settings = {
-        'dim_lang': data_process.dim_lang, # 524
-        'dim_world': data_process.dim_world, # 78
-        'dim_action': data_process.dim_action, # 4
-        'dim_model': input_trainer['dim_model'],# 100
-        'optimizer': input_trainer['optimizer'], # adam
-        'drop_out_rate': input_trainer['drop_out_rate'] # 0.9
+        'dim_lang': data_process.dim_lang,  # 524
+        'dim_world': data_process.dim_world,  # 78
+        'dim_action': data_process.dim_action,  # 4
+        'dim_model': input_trainer['dim_model'],  # 100
+        'optimizer': input_trainer['optimizer'],  # adam
+        'drop_out_rate': input_trainer['drop_out_rate']  # 0.9
     }
 
     trainer = trainers.NeuralWalkerTrainer(
@@ -101,7 +101,7 @@ def train_model(input_trainer):
 
     print "model finished, compilation time is ", round(compile_time, 0)
 
-    #TODO: start training, define the training functions
+    # TODO: start training, define the training functions
     print "building training log ... "
     log_dict['compile_time'] = round(compile_time, 0)
     data_process.track_log(log_dict)
@@ -113,7 +113,7 @@ def train_model(input_trainer):
         #
         err = 0.0
         num_steps = 0
-        #TODO: shuffle the training data and train this epoch
+        # TODO: shuffle the training data and train this epoch
         ##
         train_start = time.time()
         #
@@ -121,6 +121,7 @@ def train_model(input_trainer):
             max_steps = len(
                 data_process.dict_data['train'][name_map]
             )
+            print 'max_steps=',max_steps
             for idx_data, data in enumerate(data_process.dict_data['train'][name_map]):
                 data_process.process_one_data(
                     idx_data, name_map, 'train'
@@ -130,6 +131,7 @@ def train_model(input_trainer):
                     data_process.seq_world_numpy,  # matrix of dim (len(one_data['cleanpath'])*100
                     data_process.seq_action_numpy  # index value of 1 in one hot vector of action
                 )
+                # print "---Cost_numpy___=",cost_numpy
                 err += cost_numpy
                 if idx_data % 100 == 99:
                     print "training i-th out of N in map : ", (idx_data, max_steps, name_map)
@@ -174,7 +176,7 @@ def train_model(input_trainer):
         dev_err = err / num_steps
         #
         log_dict['tracked']['dev_loss'] = round(dev_err, 3)
-        #TODO: get beam search result, beam = 1
+        # TODO: get beam search result, beam = 1
         #
         bs_settings['trained_model'] = trainer.get_model()
         #bs = beam_search.BeamSearchNeuralWalker(

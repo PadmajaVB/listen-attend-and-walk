@@ -2,7 +2,6 @@
 """
 run file for neural walker
 
-@author: hongyuan
 """
 
 import pickle
