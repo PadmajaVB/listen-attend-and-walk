@@ -108,7 +108,7 @@ class DataProcess(object):
     def get_pos(self, idx_data, name_map, tag_split):
         one_data = self.dict_data[tag_split][name_map][idx_data]
         path_one_data = one_data['cleanpath']
-        return path_one_data[0], path_one_data[-1]
+        return path_one_data[0], path_one_data[-1] # starting and ending positions of the form (x,y,orientation)
 
     #
     def process_one_data(self, idx_data, name_map, tag_split):
@@ -127,7 +127,7 @@ class DataProcess(object):
         )
         # seq_lang finished
         #
-        """ Zero matrix of dim (len(one_data['cleanpath'])*100)"""
+        """ Zero matrix of dim (len(one_data['cleanpath'])*78)"""
         self.seq_world_numpy = numpy.zeros(
             (len(one_data['cleanpath']), self.dim_world),
             dtype=dtype
@@ -186,10 +186,13 @@ class DataProcess(object):
             (len(one_data['action']), ),
             dtype=numpy.int32
         )
+
+        """numpy array of index at which the one-hot action vector value is 1"""
         for idx_action, one_hot_vec_action in enumerate(one_data['action']):
             self.seq_action_numpy[idx_action] = numpy.argmax(
                 one_hot_vec_action
             )
+        # print "self.seq_action_numpy.shape=",self.seq_action_numpy.shape
         # finished processing !
     #
     def creat_log(self, log_dict):

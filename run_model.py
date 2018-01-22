@@ -129,7 +129,7 @@ def train_model(input_trainer):
 				)
 				cost_numpy = trainer.model_learn(
 						data_process.seq_lang_numpy,  # list of word indices
-						data_process.seq_world_numpy,  # matrix of dim (len(one_data['cleanpath'])*100
+						data_process.seq_world_numpy,  # matrix of dim (len(one_data['cleanpath'])*78
 						data_process.seq_action_numpy  # index value of 1 in one hot vector of action
 				)
 				# print "---Cost_numpy___=",cost_numpy
