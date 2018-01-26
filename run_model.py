@@ -214,10 +214,10 @@ def train_model(input_trainer):
 						numpy.copy(pos_start), numpy.copy(pos_end)
 				)
 				bs.search_func()
-				#
+				# Checks if the destination is reached
 				if bs.check_pos_end():
 					cnt_success += 1
-				#
+				# Resets everything to default values for the next instruction
 				bs.refresh_state()
 				#
 			#

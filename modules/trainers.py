@@ -39,6 +39,7 @@ class NeuralWalkerTrainer(object):
         #
         self.model_settings = model_settings
         #
+        # creates weight and bias matrices
         self.neural_walker = models.NeuralWalker(
             model_settings = self.model_settings
         )

@@ -304,13 +304,24 @@ class NeuralWalker(object):
 	def compute_loss(self, seq_lang, seq_world, seq_action):
 		print "computing the loss function of Neural Walker ... "
 		"""xt_lang_forward =<class 'theano.tensor.var.TensorVariable'>"""
-		xt_lang_forward = self.Emb_enc_forward[
-						  seq_lang, :
-						  ]
 
-		xt_lang_backward = self.Emb_enc_backward[
-						   seq_lang, :
-						   ]
+		"""
+		in x[[i,j,k],] i,j,k row of x will be extracted.
+		 example:
+		>>> x[[0,1,1],:]
+		array([[1, 1, 1],
+       		   [2, 2, 2],
+               [2, 2, 2]])
+		>>> x[[0,1,0,1],:]
+		array([[1, 1, 1],
+              [2, 2, 2],
+              [1, 1, 1],
+              [2, 2, 2]])
+		"""
+
+		xt_lang_forward = self.Emb_enc_forward[seq_lang, :]
+		xt_lang_backward = self.Emb_enc_backward[seq_lang, :]
+
 		xt_world = theano.dot(
 				seq_world, self.Emb_dec
 		)
@@ -336,7 +347,15 @@ class NeuralWalker(object):
 				go_backwards=True
 		)
 
-		#
+		# concatenation of input vector, h-fwd and h-bwd
+		"""
+		>>> a=np.array([[1,1,1],[4,4,4]])
+		>>> b=np.array([[2,2,2],[5,5,5]])
+		>>> c=np.array([[3,3,3],[6,6,6]])
+		>>> np.concatenate((a,b,c),axis=1)
+		array([[1, 1, 1, 2, 2, 2, 3, 3, 3],
+       			[4, 4, 4, 5, 5, 5, 6, 6, 6]])
+		"""
 		self.scope_att = tensor.concatenate(
 				[
 					self.Emb_lang_sparse[seq_lang, :],

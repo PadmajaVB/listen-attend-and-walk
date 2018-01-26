@@ -339,12 +339,13 @@ class BeamSearchNeuralWalker(object):
 		assert (
 			idx_action == 3 or idx_action == 2 or idx_action == 1 or idx_action == 0
 		)
-		if idx_action == 0:
+		if idx_action == 0:  # checking for the forward orientation
+			# feat_current_position[23] indicates if the way is walkable or not for fwd vector
 			if feat_current_position[23] > 0.5:
 				# 6 + 18 = 24 --> 23
-				return False
+				return False  # indicates that the path is not walkable
 			else:
-				return True
+				return True  # indicates that the path is walkable
 		else:
 			return True
 
@@ -373,14 +374,15 @@ class BeamSearchNeuralWalker(object):
 		assert (
 			direc_current == 0 or direc_current == 90 or direc_current == 180 or direc_current == 270
 		)
+		# grid is in 3rd quadrant (non-negative y value)
 		if direc_current == 0:
-			pos_next[1] -= 1
+			pos_next[1] -= 1  # moving 1 step fwd in North direction i.e decrementing y by 1
 		elif direc_current == 90:
-			pos_next[0] += 1
+			pos_next[0] += 1  # moving 1 step fwd in East direction i.e incrementing x by 1
 		elif direc_current == 180:
-			pos_next[1] += 1
+			pos_next[1] += 1  # moving 1 step fwd in South direction i.e incrementing y by 1
 		else:
-			pos_next[0] -= 1
+			pos_next[0] -= 1  # moving 1 step fwd in West direction i.e decrementing x by 1
 		return pos_next
 
 	#
@@ -395,10 +397,10 @@ class BeamSearchNeuralWalker(object):
 		assert (idx_action == 0 or idx_action == 1 or idx_action == 2 or idx_action == 3)
 		if idx_action == 1:
 			# turn left
-			pos_next[2] = left_current
+			pos_next[2] = left_current  # left orientation
 		elif idx_action == 2:
-			pos_next[2] = right_current
-		elif idx_action == 3:
+			pos_next[2] = right_current  # right orientation
+		elif idx_action == 3:  # stop
 			pass
 		else:
 			pos_next = self.one_step_forward(pos_current)
@@ -455,15 +457,17 @@ class BeamSearchNeuralWalker(object):
 		while ((len(self.finish_list) < self.size_beam) and (counter < max_counter)):
 			new_list = []
 			for item in self.beam_list:
-				# xt_item -- current world state, ht_item -- lstm state, ct -- context of the instruction
+				# xt_item -- current world state, ht_item -- lstm state, ct_item -- context of the instruction
 				# probt_item, log_prot_item -- conditional prob distribution over the next action
 				xt_item, ht_item, ct_item, probt_item, log_probt_item = self.decode_step(
 						item['feat_current_position'],
 						item['htm1'], item['ctm1']
 				)
-				top_k_list = range(probt_item.shape[0])
+				top_k_list = range(probt_item.shape[0])  # (4,)
 				for top_idx_action in top_k_list:
+					# item['feat_current_position'] is the world state of 1st position of the action set
 					if self.validate_step(top_idx_action, item['feat_current_position']):
+						# print "item['list_idx_action']=",item['list_idx_action']
 						new_item = {
 							'htm1': numpy.copy(ht_item),
 							'ctm1': numpy.copy(ct_item),
@@ -474,10 +478,11 @@ class BeamSearchNeuralWalker(object):
 								numpy.copy(pos) for pos in item['list_pos']
 								]
 						}
+						# print "new_item['list_idx_action']=",new_item['list_idx_action']
 						new_item['list_idx_action'].append(
 								top_idx_action
 						)
-						#
+						# position value gets updated with new coordinates/orientation
 						new_item['pos_current'] = numpy.copy(
 								self.take_one_step(
 										item['pos_current'], top_idx_action
@@ -487,7 +492,7 @@ class BeamSearchNeuralWalker(object):
 						new_item['pos_destination'] = numpy.copy(
 								item['pos_destination']
 						)
-						#
+						# the world state of new position
 						new_item['feat_current_position'] = numpy.copy(
 								self.get_feat_current_position(
 										new_item['pos_current']
@@ -512,7 +517,7 @@ class BeamSearchNeuralWalker(object):
 					new_list, key=lambda x: x['cost']
 			)
 			if len(new_list) > self.size_beam:
-				new_list = new_list[:self.size_beam]
+				new_list = new_list[:self.size_beam]  # performing the highest probability action only (greedy search)
 			#
 			self.beam_list = []
 			while len(new_list) > 0:
@@ -530,7 +535,9 @@ class BeamSearchNeuralWalker(object):
 			)
 			while len(self.finish_list) > self.size_beam:
 				self.finish_list.pop()
+				print "Length of finish list = ", len(self.finish_list)
 		while len(self.finish_list) < self.size_beam:
+			print "Entered!"
 			self.finish_list.append(self.beam_list.pop(0))
 
 	#
