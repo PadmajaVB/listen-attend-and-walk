@@ -262,22 +262,24 @@ class NeuralWalker(object):
 
 	def func_dec(self, xt, htm1, ctm1):
 		# xt -- embedded world representations
-		current_att_weight = self.softmax(
+		# computing alpha
+		current_att_weight = self.softmax(  # (x,100)*(100,1) = (x,1)
+				# computing beta
 				theano.dot(
 						tensor.tanh(
 								theano.dot(
-										htm1, self.W_att_target
-								) + self.scope_att_times_W
+										htm1, self.W_att_target  # (x,100)*(100,100) = (x,100)
+								) + self.scope_att_times_W  # (x,100)
 						),
-						self.b_att
+						self.b_att  # (100,1)
 				)
 		)
-		#
-		zt = theano.dot(current_att_weight, self.scope_att)
+		# (1,x)*(x,y)=(1,y)
+		zt = theano.dot(current_att_weight, self.scope_att)  # context vector from the multi-level aligner
 		#
 		post_transform = self.b_dec + theano.dot(
 				tensor.concatenate(
-						[xt, htm1, zt], axis=0
+						[xt, htm1, zt], axis=0  # according to paper xt - yt, htm1 - s(t-1), zt - zt
 				),
 				self.W_dec
 		)
@@ -294,7 +296,7 @@ class NeuralWalker(object):
 				post_transform[3 * self.dim_model:]
 		)
 		ct = gate_forget * ctm1 + gate_input * gate_pre_c
-		ht = gate_output * tensor.tanh(ct)
+		ht = gate_output * tensor.tanh(ct)  # in paper ht - st
 		#
 		# use drop_out
 		ht_dropout = ht * self.drop_out_layer_gen()
@@ -376,7 +378,7 @@ class NeuralWalker(object):
 				],
 				non_sequences=None
 		)
-		#
+		# in paper post_transform - qt
 		post_transform = theano.dot(
 				xt_world + theano.dot(
 						tensor.concatenate(

@@ -124,6 +124,8 @@ def train_model(input_trainer):
 			)
 			print 'max_steps=', max_steps
 			for idx_data, data in enumerate(data_process.dict_data['train'][name_map]):
+
+				"""	seq_lang_numpy, seq_world_numpy and seq_action_numpy will be set """
 				data_process.process_one_data(
 						idx_data, name_map, 'train'
 				)
