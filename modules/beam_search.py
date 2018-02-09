@@ -274,6 +274,8 @@ class BeamSearchNeuralWalker(object):
 				self.model['Emb_dec']  # (78,100) -- utils.sample_weights
 		)
 		# neural attention operations first -- weight_current_step.shape = (x,1)
+		# Follow decoder formula from the paper
+		# weight_current_step = Pa,t = Probability
 		weight_current_step = self.softmax(
 				numpy.dot(
 						numpy.tanh(
