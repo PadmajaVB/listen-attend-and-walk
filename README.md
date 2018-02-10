@@ -28,3 +28,7 @@ python test_model.py -fp PATH
 **PATH** stands for the path to the file **model.pkl** which lies within the _tracks_ folder. This folder is created by the end of training.  
 
 This project is built using Hongyuan Mei's [code](https://github.com/HMEIatJHU/NeuralWalker) as base. 
+
+The following [code](https://github.com/klb3713/sentence2vec) has been used for embedding sentences to vectors. It uses the skip-gram model.
+
+The SAIL route instruction datset has been downloaded from [here](http://www.cs.utexas.edu/users/ml/clamp/navigation/).
