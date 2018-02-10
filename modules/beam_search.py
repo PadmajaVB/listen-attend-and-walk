@@ -16,20 +16,23 @@ from collections import defaultdict
 from theano.tensor.shared_randomstreams import RandomStreams
 import utils
 
-dtype=theano.config.floatX
+dtype = theano.config.floatX
+
+
 #
 
-#TODO: beam search for neural walker
+# TODO: beam search for neural walker
 class BeamSearchNeuralWalker(object):
     '''
     This is a beam search code for Neural Walker
     '''
+
     def __init__(self, settings):
-        #print "initializing the beam searcher ... "
+        # print "initializing the beam searcher ... "
         assert (settings['size_beam'] >= 1)
         self.size_beam = settings['size_beam']
         #
-        assert(
+        assert (
             settings['path_model'] == None or settings['trained_model'] == None
         )
         #
@@ -37,7 +40,7 @@ class BeamSearchNeuralWalker(object):
             with open(settings['path_model'], 'rb') as f:
                 self.model = pickle.load(f)
         else:
-            assert(settings['trained_model']!=None)
+            assert (settings['trained_model'] != None)
             self.model = settings['trained_model']
         #
         # convert float64 to float32
@@ -48,7 +51,7 @@ class BeamSearchNeuralWalker(object):
         #
         # re-set the weights due to drop_out_rate
         self.drop_out_rate = self.model['drop_out_rate']
-        assert(
+        assert (
             self.drop_out_rate <= numpy.float32(1.0)
         )
         self.model['W_out_hz'][:self.dim_model, :] = numpy.copy(
@@ -57,10 +60,10 @@ class BeamSearchNeuralWalker(object):
         #
         #
         self.ht_encode = numpy.zeros(
-            (self.dim_model, ), dtype=dtype
+            (self.dim_model,), dtype=dtype
         )
         self.ct_encode = numpy.zeros(
-            (self.dim_model, ), dtype=dtype
+            (self.dim_model,), dtype=dtype
         )
         #
         self.scope_att = None
@@ -68,10 +71,10 @@ class BeamSearchNeuralWalker(object):
         #
         self.beam_list = []
         self.finish_list = []
-        #self.normalize_mode = settings['normalize_mode']
+        # self.normalize_mode = settings['normalize_mode']
         # whether to normalize the cost over length of sequence
         #
-        #self.lang2idx = settings['lang2idx']
+        # self.lang2idx = settings['lang2idx']
         self.dim_lang = settings['dim_lang']
         self.map = settings['map']
         self.Emb_lang_sparse = numpy.identity(
@@ -79,14 +82,13 @@ class BeamSearchNeuralWalker(object):
         )
         #
 
-
     def refresh_state(self):
-        #print "refreshing the states of beam search ... "
+        # print "refreshing the states of beam search ... "
         self.ht_encode = numpy.zeros(
-            (self.dim_model, ), dtype=dtype
+            (self.dim_model,), dtype=dtype
         )
         self.ct_encode = numpy.zeros(
-            (self.dim_model, ), dtype=dtype
+            (self.dim_model,), dtype=dtype
         )
         #
         self.scope_att = None
@@ -97,12 +99,16 @@ class BeamSearchNeuralWalker(object):
 
     #
     def sigmoid(self, x):
-        return 1 / (1+numpy.exp(-x))
+        return 1 / (1 + numpy.exp(-x))
+
     #
     def set_encoder_forward(self):
-        xt_lang_forward = self.model['Emb_enc_forward'][
-            self.seq_lang_numpy, :
-        ]
+        xt_lang_forward = self.model['Emb_enc_forward'][self.seq_lang_numpy, :]
+        ''' 
+        The above line :
+        seq_lang_numpy contains word indices.
+        So, only those indices will be extracted from Emb_enc_forward 
+        '''
         shape_encode = xt_lang_forward.shape
         self.ht_enc_forward = numpy.zeros(
             shape_encode, dtype=dtype
@@ -111,11 +117,11 @@ class BeamSearchNeuralWalker(object):
             shape_encode, dtype=dtype
         )
         len_lang = shape_encode[0]
-        for time_stamp in range(-1, len_lang-1, 1):
+        for time_stamp in range(-1, len_lang - 1, 1):
             post_transform = self.model['b_enc_forward'] + numpy.dot(
                 numpy.concatenate(
                     (
-                        xt_lang_forward[time_stamp+1, :],
+                        xt_lang_forward[time_stamp + 1, :],
                         self.ht_enc_forward[time_stamp, :]
                     ),
                     axis=0
@@ -126,25 +132,29 @@ class BeamSearchNeuralWalker(object):
             gate_input_numpy = self.sigmoid(
                 post_transform[:self.dim_model]
             )
+            # print "gate_input_numpy = ", gate_input_numpy
             gate_forget_numpy = self.sigmoid(
-                post_transform[self.dim_model:2*self.dim_model]
+                post_transform[self.dim_model:2 * self.dim_model]
             )
             gate_output_numpy = self.sigmoid(
-                post_transform[2*self.dim_model:3*self.dim_model]
+                post_transform[2 * self.dim_model:3 * self.dim_model]
             )
             gate_pre_c_numpy = numpy.tanh(
-                post_transform[3*self.dim_model:]
+                post_transform[3 * self.dim_model:]
             )
-            self.ct_enc_forward[time_stamp+1, :] = gate_forget_numpy * self.ct_enc_forward[time_stamp, :] + gate_input_numpy * gate_pre_c_numpy
-            self.ht_enc_forward[time_stamp+1, :] = gate_output_numpy * numpy.tanh(self.ct_enc_forward[time_stamp+1, :])
+            self.ct_enc_forward[time_stamp + 1, :] = gate_forget_numpy * self.ct_enc_forward[time_stamp,
+                                                                         :] + gate_input_numpy * gate_pre_c_numpy
+            self.ht_enc_forward[time_stamp + 1, :] = gate_output_numpy * numpy.tanh(
+                self.ct_enc_forward[time_stamp + 1, :])
             #
-        #
+            #
+
     #
     ##
     def set_encoder_backward(self):
         xt_lang_backward = self.model['Emb_enc_backward'][
-            self.seq_lang_numpy, :
-        ][::-1, :]
+                           self.seq_lang_numpy, :
+                           ][::-1, :]
         shape_encode = xt_lang_backward.shape
         self.ht_enc_backward = numpy.zeros(
             shape_encode, dtype=dtype
@@ -153,11 +163,11 @@ class BeamSearchNeuralWalker(object):
             shape_encode, dtype=dtype
         )
         len_lang = shape_encode[0]
-        for time_stamp in range(-1, len_lang-1, 1):
+        for time_stamp in range(-1, len_lang - 1, 1):
             post_transform = self.model['b_enc_backward'] + numpy.dot(
                 numpy.concatenate(
                     (
-                        xt_lang_backward[time_stamp+1, :],
+                        xt_lang_backward[time_stamp + 1, :],
                         self.ht_enc_backward[time_stamp, :]
                     ),
                     axis=0
@@ -169,24 +179,25 @@ class BeamSearchNeuralWalker(object):
                 post_transform[:self.dim_model]
             )
             gate_forget_numpy = self.sigmoid(
-                post_transform[self.dim_model:2*self.dim_model]
+                post_transform[self.dim_model:2 * self.dim_model]
             )
             gate_output_numpy = self.sigmoid(
-                post_transform[2*self.dim_model:3*self.dim_model]
+                post_transform[2 * self.dim_model:3 * self.dim_model]
             )
             gate_pre_c_numpy = numpy.tanh(
-                post_transform[3*self.dim_model:]
+                post_transform[3 * self.dim_model:]
             )
-            self.ct_enc_backward[time_stamp+1, :] = gate_forget_numpy * self.ct_enc_backward[time_stamp, :] + gate_input_numpy * gate_pre_c_numpy
-            self.ht_enc_backward[time_stamp+1, :] = gate_output_numpy * numpy.tanh(self.ct_enc_backward[time_stamp+1, :])
+            self.ct_enc_backward[time_stamp + 1, :] = gate_forget_numpy * self.ct_enc_backward[time_stamp,
+                                                                          :] + gate_input_numpy * gate_pre_c_numpy
+            self.ht_enc_backward[time_stamp + 1, :] = gate_output_numpy * numpy.tanh(
+                self.ct_enc_backward[time_stamp + 1, :])
             #
-        #
+            #
+
     #
     #
 
-    def set_encoder(
-        self, seq_lang_numpy, seq_world_numpy
-    ):
+    def set_encoder(self, seq_lang_numpy, seq_world_numpy):
         #
         self.seq_lang_numpy = seq_lang_numpy
         self.seq_world_numpy = seq_world_numpy
@@ -204,12 +215,12 @@ class BeamSearchNeuralWalker(object):
         self.scope_att_times_W = numpy.dot(
             self.scope_att, self.model['W_att_scope']
         )
-        #self.ht_encode = ht_source[:, 0]
+        # self.ht_encode = ht_source[:, 0]
         #
 
     def init_beam(self, pos_start, pos_end):
-        #print "initialize beam ... "
-        item  = {
+        # print "initialize beam ... "
+        item = {
             'htm1': numpy.copy(self.ht_encode),
             'ctm1': numpy.copy(self.ct_encode),
             'feat_current_position': numpy.copy(
@@ -233,8 +244,8 @@ class BeamSearchNeuralWalker(object):
         return exp_x / numpy.sum(exp_x)
 
     def decode_step(
-        self, feat_current_position,
-        htm1_action, ctm1_action
+            self, feat_current_position,
+            htm1_action, ctm1_action
     ):
         #
         xt_action = numpy.dot(
@@ -272,13 +283,13 @@ class BeamSearchNeuralWalker(object):
             post_transform[:self.dim_model]
         )
         gate_forget_numpy = self.sigmoid(
-            post_transform[self.dim_model:2*self.dim_model]
+            post_transform[self.dim_model:2 * self.dim_model]
         )
         gate_output_numpy = self.sigmoid(
-            post_transform[2*self.dim_model:3*self.dim_model]
+            post_transform[2 * self.dim_model:3 * self.dim_model]
         )
         gate_pre_c_numpy = numpy.tanh(
-            post_transform[3*self.dim_model:]
+            post_transform[3 * self.dim_model:]
         )
         ct_action = gate_forget_numpy * ctm1_action + gate_input_numpy * gate_pre_c_numpy
         ht_action = gate_output_numpy * numpy.tanh(ct_action)
@@ -297,11 +308,11 @@ class BeamSearchNeuralWalker(object):
             post_transform_prob - numpy.amax(post_transform_prob)
         )
         probt = exp_post_trans / numpy.sum(exp_post_trans)
-        log_probt = numpy.log(probt + numpy.float32(1e-8) )
+        log_probt = numpy.log(probt + numpy.float32(1e-8))
         return xt_action, ht_action, ct_action, probt, log_probt
 
     def validate_step(self, idx_action, feat_current_position):
-        assert(
+        assert (
             idx_action == 3 or idx_action == 2 or idx_action == 1 or idx_action == 0
         )
         if idx_action == 0:
@@ -317,7 +328,7 @@ class BeamSearchNeuralWalker(object):
     def get_left_and_right(self, direc_current):
         # direc_current can be 0 , 90, 180, 270
         # it is the current facing direction
-        assert(direc_current == 0 or direc_current == 90 or direc_current == 180 or direc_current == 270)
+        assert (direc_current == 0 or direc_current == 90 or direc_current == 180 or direc_current == 270)
         left = direc_current - 90
         if left == -90:
             left = 270
@@ -335,7 +346,7 @@ class BeamSearchNeuralWalker(object):
     def one_step_forward(self, pos_current):
         direc_current = pos_current[2]
         pos_next = numpy.copy(pos_current)
-        assert(
+        assert (
             direc_current == 0 or direc_current == 90 or direc_current == 180 or direc_current == 270
         )
         if direc_current == 0:
@@ -347,6 +358,7 @@ class BeamSearchNeuralWalker(object):
         else:
             pos_next[0] -= 1
         return pos_next
+
     #
     #
     #
@@ -356,7 +368,7 @@ class BeamSearchNeuralWalker(object):
             pos_current[2]
         )
         pos_next = numpy.copy(pos_current)
-        assert(idx_action==0 or idx_action==1 or idx_action==2 or idx_action==3)
+        assert (idx_action == 0 or idx_action == 1 or idx_action == 2 or idx_action == 3)
         if idx_action == 1:
             # turn left
             pos_next[2] = left_current
@@ -407,16 +419,16 @@ class BeamSearchNeuralWalker(object):
                     )
                 )
                 #
-        assert(count_pos_found > 0)
+        assert (count_pos_found > 0)
         return feat_current_position
         # since the action is validated before moving
         # this position must be in this map
         #
 
     def search_func(self):
-        #print "search for target ... "
+        # print "search for target ... "
         counter, max_counter = 0, 100
-        while ((len(self.finish_list)<self.size_beam) and (counter<max_counter) ):
+        while ((len(self.finish_list) < self.size_beam) and (counter < max_counter)):
             new_list = []
             for item in self.beam_list:
                 xt_item, ht_item, ct_item, probt_item, log_probt_item = self.decode_step(
@@ -466,12 +478,12 @@ class BeamSearchNeuralWalker(object):
                         else:
                             new_item['continue'] = True
                         #
-                        new_item['cost'] = item['cost'] + (-1.0)*log_probt_item[top_idx_action]
+                        new_item['cost'] = item['cost'] + (-1.0) * log_probt_item[top_idx_action]
                         #
                         new_list.append(new_item)
             #
             new_list = sorted(
-                new_list, key=lambda x:x['cost']
+                new_list, key=lambda x: x['cost']
             )
             if len(new_list) > self.size_beam:
                 new_list = new_list[:self.size_beam]
@@ -488,7 +500,7 @@ class BeamSearchNeuralWalker(object):
         #
         if len(self.finish_list) > 0:
             self.finish_list = sorted(
-                self.finish_list, key=lambda x:x['cost']
+                self.finish_list, key=lambda x: x['cost']
             )
             while len(self.finish_list) > self.size_beam:
                 self.finish_list.pop()
@@ -516,18 +528,19 @@ class BeamSearchNeuralWalker(object):
             return False
 
 
-#'''
-#TODO: beam search for neural walker, ensemble of models
+# '''
+# TODO: beam search for neural walker, ensemble of models
 class BeamSearchNeuralWalkerEnsemble(object):
     '''
     # This is a beam search code for Neural Walker
     '''
+
     def __init__(self, settings):
-        #print "initializing the beam searcher ... "
+        # print "initializing the beam searcher ... "
         assert (settings['size_beam'] >= 1)
         self.size_beam = settings['size_beam']
         #
-        assert(
+        assert (
             settings['set_path_model'] != None
         )
         #
@@ -544,7 +557,7 @@ class BeamSearchNeuralWalkerEnsemble(object):
                     model[param_name]
                 )
             model['dim_model'] = model['Emb_enc_forward'].shape[1]
-            assert(
+            assert (
                 model['drop_out_rate'] <= numpy.float32(1.0)
             )
             model['W_out_hz'][:model['dim_model'], :] = numpy.copy(
@@ -552,10 +565,10 @@ class BeamSearchNeuralWalkerEnsemble(object):
             )
             #
             model['ht_encode'] = numpy.zeros(
-                (model['dim_model'], ), dtype=dtype
+                (model['dim_model'],), dtype=dtype
             )
             model['ct_encode'] = numpy.zeros(
-                (model['dim_model'], ), dtype=dtype
+                (model['dim_model'],), dtype=dtype
             )
             #
             model['scope_att'] = None
@@ -564,7 +577,7 @@ class BeamSearchNeuralWalkerEnsemble(object):
         #
         self.beam_list = []
         self.finish_list = []
-        #self.normalize_mode = settings['normalize_mode']
+        # self.normalize_mode = settings['normalize_mode']
         # whether to normalize the cost over length of sequence
         #
         self.dim_lang = settings['dim_lang']
@@ -574,15 +587,14 @@ class BeamSearchNeuralWalkerEnsemble(object):
         )
         #
 
-
     def refresh_state(self):
-        #print "refreshing the states of beam search ... "
+        # print "refreshing the states of beam search ... "
         for model in self.list_models:
             model['ht_encode'] = numpy.zeros(
-                (model['dim_model'], ), dtype=dtype
+                (model['dim_model'],), dtype=dtype
             )
             model['ct_encode'] = numpy.zeros(
-                (model['dim_model'], ), dtype=dtype
+                (model['dim_model'],), dtype=dtype
             )
             model['scope_att'] = None
             model['scope_att_times_W'] = None
@@ -592,13 +604,14 @@ class BeamSearchNeuralWalkerEnsemble(object):
 
     #
     def sigmoid(self, x):
-        return 1 / (1+numpy.exp(-x))
+        return 1 / (1 + numpy.exp(-x))
+
     #
     def set_encoder_forward(self, idx_model):
         dim_model = self.list_models[idx_model]['dim_model']
         xt_lang_forward = self.list_models[idx_model]['Emb_enc_forward'][
-            self.seq_lang_numpy, :
-        ]
+                          self.seq_lang_numpy, :
+                          ]
         shape_encode = xt_lang_forward.shape
         self.ht_enc_forward = numpy.zeros(
             shape_encode, dtype=dtype
@@ -607,11 +620,11 @@ class BeamSearchNeuralWalkerEnsemble(object):
             shape_encode, dtype=dtype
         )
         len_lang = shape_encode[0]
-        for time_stamp in range(-1, len_lang-1, 1):
+        for time_stamp in range(-1, len_lang - 1, 1):
             post_transform = self.list_models[idx_model]['b_enc_forward'] + numpy.dot(
                 numpy.concatenate(
                     (
-                        xt_lang_forward[time_stamp+1, :],
+                        xt_lang_forward[time_stamp + 1, :],
                         self.ht_enc_forward[time_stamp, :]
                     ),
                     axis=0
@@ -623,25 +636,28 @@ class BeamSearchNeuralWalkerEnsemble(object):
                 post_transform[:dim_model]
             )
             gate_forget_numpy = self.sigmoid(
-                post_transform[dim_model:2*dim_model]
+                post_transform[dim_model:2 * dim_model]
             )
             gate_output_numpy = self.sigmoid(
-                post_transform[2*dim_model:3*dim_model]
+                post_transform[2 * dim_model:3 * dim_model]
             )
             gate_pre_c_numpy = numpy.tanh(
-                post_transform[3*dim_model:]
+                post_transform[3 * dim_model:]
             )
-            self.ct_enc_forward[time_stamp+1, :] = gate_forget_numpy * self.ct_enc_forward[time_stamp, :] + gate_input_numpy * gate_pre_c_numpy
-            self.ht_enc_forward[time_stamp+1, :] = gate_output_numpy * numpy.tanh(self.ct_enc_forward[time_stamp+1, :])
+            self.ct_enc_forward[time_stamp + 1, :] = gate_forget_numpy * self.ct_enc_forward[time_stamp,
+                                                                         :] + gate_input_numpy * gate_pre_c_numpy
+            self.ht_enc_forward[time_stamp + 1, :] = gate_output_numpy * numpy.tanh(
+                self.ct_enc_forward[time_stamp + 1, :])
             #
-        #
+            #
+
     #
     ##
     def set_encoder_backward(self, idx_model):
         dim_model = self.list_models[idx_model]['dim_model']
         xt_lang_backward = self.list_models[idx_model]['Emb_enc_backward'][
-            self.seq_lang_numpy, :
-        ][::-1, :]
+                           self.seq_lang_numpy, :
+                           ][::-1, :]
         shape_encode = xt_lang_backward.shape
         self.ht_enc_backward = numpy.zeros(
             shape_encode, dtype=dtype
@@ -650,11 +666,11 @@ class BeamSearchNeuralWalkerEnsemble(object):
             shape_encode, dtype=dtype
         )
         len_lang = shape_encode[0]
-        for time_stamp in range(-1, len_lang-1, 1):
+        for time_stamp in range(-1, len_lang - 1, 1):
             post_transform = self.list_models[idx_model]['b_enc_backward'] + numpy.dot(
                 numpy.concatenate(
                     (
-                        xt_lang_backward[time_stamp+1, :],
+                        xt_lang_backward[time_stamp + 1, :],
                         self.ht_enc_backward[time_stamp, :]
                     ),
                     axis=0
@@ -666,23 +682,26 @@ class BeamSearchNeuralWalkerEnsemble(object):
                 post_transform[:dim_model]
             )
             gate_forget_numpy = self.sigmoid(
-                post_transform[dim_model:2*dim_model]
+                post_transform[dim_model:2 * dim_model]
             )
             gate_output_numpy = self.sigmoid(
-                post_transform[2*dim_model:3*dim_model]
+                post_transform[2 * dim_model:3 * dim_model]
             )
             gate_pre_c_numpy = numpy.tanh(
-                post_transform[3*dim_model:]
+                post_transform[3 * dim_model:]
             )
-            self.ct_enc_backward[time_stamp+1, :] = gate_forget_numpy * self.ct_enc_backward[time_stamp, :] + gate_input_numpy * gate_pre_c_numpy
-            self.ht_enc_backward[time_stamp+1, :] = gate_output_numpy * numpy.tanh(self.ct_enc_backward[time_stamp+1, :])
+            self.ct_enc_backward[time_stamp + 1, :] = gate_forget_numpy * self.ct_enc_backward[time_stamp,
+                                                                          :] + gate_input_numpy * gate_pre_c_numpy
+            self.ht_enc_backward[time_stamp + 1, :] = gate_output_numpy * numpy.tanh(
+                self.ct_enc_backward[time_stamp + 1, :])
             #
-        #
+            #
+
     #
     #
 
     def set_encoder(
-        self, seq_lang_numpy, seq_world_numpy
+            self, seq_lang_numpy, seq_world_numpy
     ):
         #
         self.seq_lang_numpy = seq_lang_numpy
@@ -703,16 +722,15 @@ class BeamSearchNeuralWalkerEnsemble(object):
             model['scope_att_times_W'] = numpy.dot(
                 model['scope_att'], model['W_att_scope']
             )
-        #
-        #self.ht_encode = ht_source[:, 0]
-        #
-
+            #
+            # self.ht_encode = ht_source[:, 0]
+            #
 
     def init_beam(self, pos_start, pos_end):
-        #print "initialize beam ... "
-        item  = {
-            #'htm1': numpy.copy(self.ht_encode),
-            #'ctm1': numpy.copy(self.ct_encode),
+        # print "initialize beam ... "
+        item = {
+            # 'htm1': numpy.copy(self.ht_encode),
+            # 'ctm1': numpy.copy(self.ct_encode),
             'list_htm1': [],
             'list_ctm1': [],
             'feat_current_position': numpy.copy(
@@ -745,9 +763,9 @@ class BeamSearchNeuralWalkerEnsemble(object):
         return exp_x / numpy.sum(exp_x)
 
     def decode_step(
-        self, feat_current_position,
-        htm1_action, ctm1_action,
-        idx_model
+            self, feat_current_position,
+            htm1_action, ctm1_action,
+            idx_model
     ):
         #
         dim_model = self.list_models[idx_model]['dim_model']
@@ -787,13 +805,13 @@ class BeamSearchNeuralWalkerEnsemble(object):
             post_transform[:dim_model]
         )
         gate_forget_numpy = self.sigmoid(
-            post_transform[dim_model:2*dim_model]
+            post_transform[dim_model:2 * dim_model]
         )
         gate_output_numpy = self.sigmoid(
-            post_transform[2*dim_model:3*dim_model]
+            post_transform[2 * dim_model:3 * dim_model]
         )
         gate_pre_c_numpy = numpy.tanh(
-            post_transform[3*dim_model:]
+            post_transform[3 * dim_model:]
         )
         ct_action = gate_forget_numpy * ctm1_action + gate_input_numpy * gate_pre_c_numpy
         ht_action = gate_output_numpy * numpy.tanh(ct_action)
@@ -812,11 +830,11 @@ class BeamSearchNeuralWalkerEnsemble(object):
             post_transform_prob - numpy.amax(post_transform_prob)
         )
         probt = exp_post_trans / numpy.sum(exp_post_trans)
-        log_probt = numpy.log(probt + numpy.float32(1e-8) )
+        log_probt = numpy.log(probt + numpy.float32(1e-8))
         return xt_action, ht_action, ct_action, probt, log_probt
 
     def validate_step(self, idx_action, feat_current_position):
-        assert(
+        assert (
             idx_action == 3 or idx_action == 2 or idx_action == 1 or idx_action == 0
         )
         if idx_action == 0:
@@ -832,7 +850,7 @@ class BeamSearchNeuralWalkerEnsemble(object):
     def get_left_and_right(self, direc_current):
         # direc_current can be 0 , 90, 180, 270
         # it is the current facing direction
-        assert(direc_current == 0 or direc_current == 90 or direc_current == 180 or direc_current == 270)
+        assert (direc_current == 0 or direc_current == 90 or direc_current == 180 or direc_current == 270)
         left = direc_current - 90
         if left == -90:
             left = 270
@@ -850,7 +868,7 @@ class BeamSearchNeuralWalkerEnsemble(object):
     def one_step_forward(self, pos_current):
         direc_current = pos_current[2]
         pos_next = numpy.copy(pos_current)
-        assert(
+        assert (
             direc_current == 0 or direc_current == 90 or direc_current == 180 or direc_current == 270
         )
         if direc_current == 0:
@@ -862,6 +880,7 @@ class BeamSearchNeuralWalkerEnsemble(object):
         else:
             pos_next[0] -= 1
         return pos_next
+
     #
     #
     #
@@ -871,7 +890,7 @@ class BeamSearchNeuralWalkerEnsemble(object):
             pos_current[2]
         )
         pos_next = numpy.copy(pos_current)
-        assert(idx_action==0 or idx_action==1 or idx_action==2 or idx_action==3)
+        assert (idx_action == 0 or idx_action == 1 or idx_action == 2 or idx_action == 3)
         if idx_action == 1:
             # turn left
             pos_next[2] = left_current
@@ -922,17 +941,16 @@ class BeamSearchNeuralWalkerEnsemble(object):
                     )
                 )
                 #
-        assert(count_pos_found > 0)
+        assert (count_pos_found > 0)
         return feat_current_position
         # since the action is validated before moving
         # this position must be in this map
         #
 
-
     def search_func(self):
-        #print "search for target ... "
+        # print "search for target ... "
         counter, max_counter = 0, 100
-        while ((len(self.finish_list)<self.size_beam) and (counter<max_counter) ):
+        while ((len(self.finish_list) < self.size_beam) and (counter < max_counter)):
             new_list = []
             for item in self.beam_list:
                 #
@@ -950,7 +968,7 @@ class BeamSearchNeuralWalkerEnsemble(object):
                     list_ht.append(numpy.copy(ht_item_model))
                     list_ct.append(numpy.copy(ct_item_model))
                 probt_item = numpy.mean(
-                    numpy.array(list_probt), axis = 0
+                    numpy.array(list_probt), axis=0
                 )
                 log_probt_item = numpy.log(
                     probt_item + numpy.float32(1e-8)
@@ -1002,12 +1020,12 @@ class BeamSearchNeuralWalkerEnsemble(object):
                         else:
                             new_item['continue'] = True
                         #
-                        new_item['cost'] = item['cost'] + (-1.0)*log_probt_item[top_idx_action]
+                        new_item['cost'] = item['cost'] + (-1.0) * log_probt_item[top_idx_action]
                         #
                         new_list.append(new_item)
             #
             new_list = sorted(
-                new_list, key=lambda x:x['cost']
+                new_list, key=lambda x: x['cost']
             )
             if len(new_list) > self.size_beam:
                 new_list = new_list[:self.size_beam]
@@ -1024,7 +1042,7 @@ class BeamSearchNeuralWalkerEnsemble(object):
         #
         if len(self.finish_list) > 0:
             self.finish_list = sorted(
-                self.finish_list, key=lambda x:x['cost']
+                self.finish_list, key=lambda x: x['cost']
             )
             while len(self.finish_list) > self.size_beam:
                 self.finish_list.pop()
@@ -1051,5 +1069,4 @@ class BeamSearchNeuralWalkerEnsemble(object):
         else:
             return False
 
-
-#'''
+# '''
