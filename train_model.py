@@ -23,16 +23,14 @@ import run_model
 import datetime
 import argparse
 
-
-dtype=theano.config.floatX
+dtype = theano.config.floatX
 
 
 #
 
 def main():
-
     parser = argparse.ArgumentParser(
-        description='Trainning model ... '
+        description='Training model ... '
     )
     #
     '''
@@ -119,7 +117,7 @@ def main():
     id_process = os.getpid()
     time_current = datetime.datetime.now().isoformat()
     #
-    tag_model = '_PID='+str(id_process)+'_TIME='+time_current
+    tag_model = '_PID=' + str(id_process) + '_TIME=' + time_current
     #
     path_track = './tracks/track' + tag_model + '/'
     file_log = os.path.abspath(
@@ -137,18 +135,18 @@ def main():
     '--FilePretrain', '--MaxEpoch', '--Optimizer'
     '--DropOut', '--Map1', '--Map2'
     '''
-    print ("PID is : %s" % str(id_process) )
-    print ("TIME is : %s" % time_current )
+    print ("PID is : %s" % str(id_process))
+    print ("TIME is : %s" % time_current)
     #
-    print ("FileData is : %s" % args.FileData )
-    print ("DimModel is : %s" % str(args.DimModel) )
-    print ("Seed is : %s" % str(args.Seed) )
+    print ("FileData is : %s" % args.FileData)
+    print ("DimModel is : %s" % str(args.DimModel))
+    print ("Seed is : %s" % str(args.Seed))
     print ("FilePretrain is : %s" % args.FilePretrain)
-    print ("MaxEpoch is : %s" % str(args.MaxEpoch) )
-    print ("Optimizer is : %s" % args.Optimizer )
-    print ("DropOut is : %s" % str(args.DropOut) )
-    print ("Map1 is : %s" % str(args.Map1) )
-    print ("Map2 is : %s" % str(args.Map2) )
+    print ("MaxEpoch is : %s" % str(args.MaxEpoch))
+    print ("Optimizer is : %s" % args.Optimizer)
+    print ("DropOut is : %s" % str(args.DropOut))
+    print ("Map1 is : %s" % str(args.Map1))
+    print ("Map2 is : %s" % str(args.Map2))
     #
     dict_args = {
         'PID': id_process,
@@ -183,4 +181,6 @@ def main():
     run_model.train_model(input_trainer)
     #
 
-if __name__ == "__main__": main()
+
+if __name__ == "__main__":
+    main()
