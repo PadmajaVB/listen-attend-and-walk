@@ -6,6 +6,9 @@ def generate_context_vector(input_vector, hidden_state_vector):
 	irows = input_vector.shape[1]
 	icols = input_vector.shape[0]  # TODO: replace this with timesteps
 	input_wt = utils.random_weights(irows, icols)
+	# print
+	# print "weights ----------------------------------------------------"
+	# print input_wt
 
 	hrows = hidden_state_vector.shape[1]
 	hcols = hidden_state_vector.shape[0]

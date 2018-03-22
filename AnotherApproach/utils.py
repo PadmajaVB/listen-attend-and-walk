@@ -1,5 +1,6 @@
 import numpy
 
+
 def random_weights(nrow, ncol):
     bound = (numpy.sqrt(6.0) / numpy.sqrt(nrow+ncol) ) * 1.0
     # nrow -- # of prev layer units, ncol -- # of this layer units
@@ -9,7 +10,8 @@ def random_weights(nrow, ncol):
     )
     return numpy.cast[float](values)
 
-def softmax(self, x):
+
+def softmax(x):
 	# x is a vector
 	exp_x = numpy.exp(x - numpy.amax(x))
 	return exp_x / numpy.sum(exp_x)

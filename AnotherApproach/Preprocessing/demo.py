@@ -16,7 +16,7 @@ from word2vec import Word2Vec, Sent2Vec, LineSentence
 logging.basicConfig(format='%(asctime)s : %(threadName)s : %(levelname)s : %(message)s', level=logging.INFO)
 logging.info("running %s" % " ".join(sys.argv))
 
-input_file = 'GridJellyMultiSent.txt'  # Initially, it was test.txt
+
 ''' 
 LineSentence(input_file): just returns an object.
                           It an iterable that streams the sentences directly from disk/network
@@ -26,6 +26,8 @@ sg: defines the training algorithm. By default (`sg=1`), skip-gram is used. Othe
 min_count: ignore all words with total frequency lower than this.
 workers: use this many worker threads to train the model (=faster training with multicore machines)
 '''
+
+input_file = 'GridJellyMultiSent.txt'  # Initially, it was test.txt
 model = Word2Vec(LineSentence(input_file), size=100, window=5, sg=1, min_count=5, workers=8)
 model.save(input_file + '.model')
 model.save_word2vec_format(input_file + '.vec')

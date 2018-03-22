@@ -118,7 +118,7 @@ class NeuralWalker(object):
 		#
 		""" Matrix of shape [724*100] """
 		self.W_att_scope = theano.shared(
-				utils.sample_weights(
+				utils.sample_we5ights(
 						self.dim_lang + 2 * self.dim_model, self.dim_model
 				), name='W_att_scope'
 		)
