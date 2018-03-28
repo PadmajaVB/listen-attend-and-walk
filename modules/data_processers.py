@@ -108,7 +108,7 @@ class DataProcess(object):
     def get_pos(self, idx_data, name_map, tag_split):
         one_data = self.dict_data[tag_split][name_map][idx_data]
         path_one_data = one_data['cleanpath']
-        return path_one_data[0], path_one_data[-1] # starting and ending positions of the form (x,y,orientation)
+        return path_one_data[0], path_one_data[-1]  # starting and ending positions of the form (x,y,orientation)
 
     #
     def process_one_data(self, idx_data, name_map, tag_split):

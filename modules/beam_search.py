@@ -108,7 +108,7 @@ class BeamSearchNeuralWalker(object):
 		""" seq_lang_numpy contains word indices.
 		So, only those indices will be extracted from Emb_enc_forward """
 		xt_lang_forward = self.model['Emb_enc_forward'][self.seq_lang_numpy, :]
-		shape_encode = xt_lang_forward.shape  # Matrix of shape (x,100) where, x value varies for different instructions
+		shape_encode = xt_lang_forward.shape  # Matrix of shape (x,100) where, x (# words in a sentence) value varies for different instructions
 		self.ht_enc_forward = numpy.zeros(
 				shape_encode, dtype=dtype
 		)
@@ -276,18 +276,30 @@ class BeamSearchNeuralWalker(object):
 		# neural attention operations first -- weight_current_step.shape = (x,1)
 		# Follow decoder formula from the paper
 		# weight_current_step = Pa,t = Probability
+
+		"""
+		example:
+		>>> a=np.array([1,2,3])
+		>>> b=np.array([[2,2,2],[3,3,3]])
+		>>> a+b
+		array([[3, 4, 5],
+       			[4, 5, 6]])
+		"""
+
+		# alpha calculation
 		weight_current_step = self.softmax(
+				# beta calculation
 				numpy.dot(
 						numpy.tanh(
 								numpy.dot(
 										htm1_action, self.model['W_att_target']  # (1,100)*(100,100)=(1,100)
-								) + self.scope_att_times_W  # (x,100) => each element in (x,100) will be added with the element of (1,100)
+								) + self.scope_att_times_W  # (x,100) => each element in (x,100) will be added with the element of (1,100) (refer example)
 						),
 						self.model['b_att']  # (100,1) =>(x,100)*(100,1)=(x,1)
 				)
 		)
 		# self.scope_att is the combo of h-fwd, h-bwd and i/p instructions
-		# (x,1)*(x,724)=(1,724)
+		# (1,x)*(x,724)=(1,724)
 		zt_action = numpy.dot(
 				weight_current_step,
 				self.scope_att
@@ -320,13 +332,17 @@ class BeamSearchNeuralWalker(object):
 		ct_action = gate_forget_numpy * ctm1_action + gate_input_numpy * gate_pre_c_numpy
 		ht_action = gate_output_numpy * numpy.tanh(ct_action)
 		# ht_action -- lstm's current state, zt_action -- context vector
+
+		# (1,100)*(100,4)=(1,4)
 		post_transform_prob = numpy.dot(
+				#  (1,100)+(1,100)=(1,100)
 				xt_action + numpy.dot(
+						#  (1,824)*(824,100) = (1,100)
 						numpy.concatenate(
-								(ht_action, zt_action), axis=0
+								(ht_action, zt_action), axis=0  # (1,100) concat (1,724) = (1,824)
 						),
-						self.model['W_out_hz']
-				),
+						self.model['W_out_hz']  # (824,100)
+ 				),
 				self.model['W_out']
 		)
 		# probability calculation
@@ -535,11 +551,15 @@ class BeamSearchNeuralWalker(object):
 			self.finish_list = sorted(
 					self.finish_list, key=lambda x: x['cost']
 			)
+
 			while len(self.finish_list) > self.size_beam:
+				# print "Becoming zero..."
 				self.finish_list.pop()
-				print "Length of finish list = ", len(self.finish_list)
+
+		# print "Length of finish list = ", len(self.finish_list)
 		while len(self.finish_list) < self.size_beam:
-			print "Entered!"
+			# print "len(self.finish_list)=",len(self.finish_list),"  self.size_beam=",self.size_beam
+			# print "Entered!"
 			self.finish_list.append(self.beam_list.pop(0))
 
 	#
