@@ -3,12 +3,13 @@ def get_config():
 	input_params['map1'] = "grid"
 	input_params['map2'] = "jelly"
 	input_params['map3'] = "l"
+	input_params['maps_train'] = ["grid", "jelly"]
 
 	input_params['max_epochs'] = 2
 	input_params['seed'] = 12345
 	input_params['datafile_path'] = "./data/"
 	input_params['save_filepath'] = "./Tracks/"
-	input_params['word_embedding'] = "./WordEmbeddings.bin"
+	input_params['word_embedding'] = "./data/WordEmbeddings.bin"
 
 	return input_params
 

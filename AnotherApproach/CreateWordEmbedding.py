@@ -35,7 +35,7 @@ def trainModel(filepath):
 	# save model
 	model.save('WordEmbeddings.bin')
 	# load model
-	new_model = Word2Vec.load('WordEmbeddings.bin')
+	new_model = Word2Vec.load('./data/WordEmbeddings.bin')
 	print new_model
 
 
