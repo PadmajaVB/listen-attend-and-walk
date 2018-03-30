@@ -1,58 +1,38 @@
-# -*- coding: utf-8 -*-
-"""
-data_processers
-
-"""
-
 import pickle
-import time
 import numpy
-import theano
-from theano import sandbox
-import theano.tensor as tensor
-import os
-import scipy.io
-from collections import defaultdict
-from theano.tensor.shared_randomstreams import RandomStreams
-import utils
+import config
+from gensim.models import Word2Vec
 
-dtype=theano.config.floatX
+dtype = numpy.float32
 
-class DataProcess(object):
-    '''
-    this class process raw data into the model-friendly format
-    and save them when neccessary
-    '''
-    def __init__(self, path_rawdata=None):
+
+class ProcessData(object):
+    def __init__(self, datafile_path):
         #
-        print "initialize the data processer ... "
-        if path_rawdata:
-            self.path_rawdata = path_rawdata
-        else:
-            self.path_rawdata = './data/'
+        print "Initializing data pre-processing ....."
+
+        assert (datafile_path is not None)
+        self.datafile_path = datafile_path
+
         #
         #
-        with open(self.path_rawdata+'databag3.pickle','r') as f:
+        with open(self.datafile_path + 'databag3.pickle', 'r') as f:
             raw_data = pickle.load(f)
-        with open(self.path_rawdata+'valselect.pickle', 'r') as f:
-            devset = pickle.load(f)
-        with open(self.path_rawdata+'stat.pickle', 'r') as f:
+        with open(self.datafile_path + 'valselect.pickle', 'r') as f:
+            val_set = pickle.load(f)
+        with open(self.datafile_path + 'stat.pickle', 'r') as f:
             stats = pickle.load(f)
-        with open(self.path_rawdata+'mapscap1000.pickle', 'r') as f:
+        with open(self.datafile_path + 'mapscap1000.pickle', 'r') as f:
             self.maps = pickle.load(f)
             # maps is a list
         #
         self.lang2idx = stats['word2ind']
-        # print "LANG************", self.lang2idx
-        self.dim_lang = stats['volsize'] # 524
-        # print ("volsize=",self.dim_lang)
+        self.dim_lang = stats['volsize']  # 524
         #
-        self.dim_world = 78
-        self.dim_action = 4  # forward, left, right, stop
-        # pre-defined world representations
-        # 6 + 4 * (8+3+6+1) = 78
-        #
-        #self.names_map = raw_data.keys()
+        self.configuration = config.get_model_config()
+        self.dim_world = self.configuration['dim_world']
+        self.dim_action = self.configuration['dim_action']
+
         self.names_map = ['grid', 'jelly', 'l']
 
         #
@@ -67,7 +47,7 @@ class DataProcess(object):
             self.dict_data['train'][name_map] = []
             self.dict_data['dev'][name_map] = []
             for idx_data, data in enumerate(raw_data[name_map]):
-                if idx_data in devset[name_map]:
+                if idx_data in val_set[name_map]:
                     """100 instructions per map"""
                     self.dict_data['dev'][name_map].append(data)
                 else:
@@ -85,7 +65,6 @@ class DataProcess(object):
         self.seq_action_numpy = None
         #
 
-    #
     def get_left_and_right(self, direc_current):
         # direc_current can be 0 , 90, 180, 270
         # it is the current facing direction
@@ -110,7 +89,6 @@ class DataProcess(object):
         path_one_data = one_data['cleanpath']
         return path_one_data[0], path_one_data[-1]  # starting and ending positions of the form (x,y,orientation)
 
-    #
     def process_one_data(self, idx_data, name_map, tag_split):
         # process the data with id = idx_data
         # in map[name_map]
@@ -118,15 +96,20 @@ class DataProcess(object):
         one_data = self.dict_data[tag_split][name_map][idx_data]
 
         """ list of word indices """
-        list_word_idx = [
-            self.lang2idx[w] for w in one_data['instruction'] if w in self.lang2idx
-        ]
-        # print "\n\nlist_word_index = ", list_word_idx
-        self.seq_lang_numpy = numpy.array(
-            list_word_idx, dtype=numpy.int32
-        )
-        # seq_lang finished
-        #
+        self.list_word_idx = [self.lang2idx[w] for w in one_data['instruction'] if w in self.lang2idx]
+
+
+        self.conf = config.get_config()
+        word_embedding = self.conf['word_embedding']
+        word_vectors = Word2Vec.load(word_embedding)
+
+        seq_lang = []
+
+        for word in one_data['instruction']:
+            seq_lang.append(word_vectors[word])
+
+        self.seq_lang_numpy = numpy.array(seq_lang)
+
         """ Zero matrix of dim (len(one_data['cleanpath'])*78)"""
         self.seq_world_numpy = numpy.zeros(
             (len(one_data['cleanpath']), self.dim_world),
@@ -149,9 +132,7 @@ class DataProcess(object):
                     # so we can get its feature
                     count_pos_found += 1
                     #
-                    left_current, right_current, behind_current = self.get_left_and_right(
-                        direc_current
-                    )
+                    left_current, right_current, behind_current = self.get_left_and_right(direc_current)
                     '''
                     note:
                     for node, we keep it as [0,..,1,..,0] one hot
@@ -194,83 +175,4 @@ class DataProcess(object):
             )
         # print "self.seq_action_numpy.shape=",self.seq_action_numpy.shape
         # finished processing !
-    #
-    def creat_log(self, log_dict):
-        print "creating training log file ... "
-        current_log_file = os.path.abspath(
-            log_dict['log_file']
-        )
-        with open(current_log_file, 'w') as f:
-            f.write('This the training log file. \n')
-            f.write('It tracks some statistics in the training process ... \n')
-            #
-            f.write('Model specs are listed below : \n')
-            for the_key in log_dict['args']:
-                f.write(
-                    the_key+' : '+str(log_dict['args'][the_key])
-                )
-                f.write('\n')
-            #
-            f.write('Before training, the compilation time is '+str(log_dict['compile_time'])+' sec ... \n')
-            f.write('Things that need to be tracked : \n')
-            for the_key in log_dict['tracked']:
-                f.write(the_key+' ')
-            f.write('\n\n')
-        #
-    #
-
-    def continue_log(self, log_dict):
-        print "continue tracking log ... "
-        current_log_file = os.path.abspath(
-            log_dict['log_file']
-        )
-        with open(current_log_file, 'a') as f:
-            for the_key in log_dict['tracked']:
-                f.write(the_key+' is '+str(log_dict['tracked'][the_key])+' \n')
-            #
-            if log_dict['max_dev_rate'] < log_dict['tracked']['dev_rate']:
-                f.write('This is a new best model ! \n')
-                log_dict['max_dev_rate'] = log_dict['tracked']['dev_rate']
-                # update the best
-                for the_key in log_dict['tracked']:
-                    log_dict['tracked_best'][
-                        the_key
-                    ] = log_dict['tracked'][the_key]
-                #
-            f.write('\n')
-
-    def track_log(self, log_dict):
-        #print "recording training log ... "
-        '''
-        log dict keys : log_file, compile_time, things need to be tracked
-        '''
-        assert(log_dict['mode']=='create' or log_dict['mode']=='continue')
-        if log_dict['mode'] == 'create':
-            self.creat_log(log_dict)
-        else:
-            self.continue_log(log_dict)
-    #
-    def finish_log(self, log_dict):
-        print "finish tracking log ... "
-        current_log_file = os.path.abspath(
-            log_dict['log_file']
-        )
-        with open(current_log_file, 'a') as f:
-            f.write('The best model info is shown below : \n')
-            for the_key in log_dict['tracked_best']:
-                f.write(
-                    the_key+' is '+str(log_dict['tracked_best'][the_key])+' \n'
-                )
-                #
-            f.write('\n')
-    #
-
-#'''
-
-if __name__ == '__main__':
-    #
-    data_process = DataProcess(
-        path_rawdata=None
-    )
-    data_process.read_rawdata()
-    #data_process.preorder_to_tree(26, 'dev')
+        return self.seq_lang_numpy, self.seq_world_numpy, self.seq_action_numpy

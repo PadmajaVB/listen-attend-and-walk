@@ -199,6 +199,7 @@ class NeuralWalker(object):
 		#
 		self.cost = None
 		self.grad_params = None
+		self.log_prob = None
 
 	#
 
@@ -209,6 +210,8 @@ class NeuralWalker(object):
         even though the code is roughly same
         '''
 		# xt -- embedded word
+		# (1,400)+((1,200)*(200,400)=(1,400))=(1,400)
+
 		post_transform = self.b_enc_forward + theano.dot(
 				tensor.concatenate(
 						[xt, htm1], axis=0
@@ -274,7 +277,7 @@ class NeuralWalker(object):
 						self.b_att  # (100,1)
 				)
 		)
-		# (1,x)*(x,y)=(1,y)
+		# (1,x)*(x,724)=(1,724)
 		zt = theano.dot(current_att_weight, self.scope_att)  # context vector from the multi-level aligner
 		#
 		post_transform = self.b_dec + theano.dot(
@@ -324,6 +327,7 @@ class NeuralWalker(object):
 		xt_lang_forward = self.Emb_enc_forward[seq_lang, :]
 		xt_lang_backward = self.Emb_enc_backward[seq_lang, :]
 
+		# (y,78)*(78,100)=(y,100)
 		xt_world = theano.dot(
 				seq_world, self.Emb_dec
 		)
@@ -358,14 +362,14 @@ class NeuralWalker(object):
 		array([[1, 1, 1, 2, 2, 2, 3, 3, 3],
        			[4, 4, 4, 5, 5, 5, 6, 6, 6]])
 		"""
-		self.scope_att = tensor.concatenate(
+		self.scope_att = tensor.concatenate(  # (x,724)
 				[
-					self.Emb_lang_sparse[seq_lang, :],
-					ht_enc_forward, ht_enc_backward[::-1, :]
+					self.Emb_lang_sparse[seq_lang, :],  # (x,524)
+					ht_enc_forward, ht_enc_backward[::-1, :]  # (x,100) & (x,100)
 				],
 				axis=1
 		)
-		self.scope_att_times_W = theano.dot(
+		self.scope_att_times_W = theano.dot(  # (x,724)*(724,100)=(x,100)
 				self.scope_att, self.W_att_scope
 		)
 		#
@@ -390,11 +394,13 @@ class NeuralWalker(object):
 		)
 		# shape -- len_path * dim_action
 		prob = tensor.nnet.softmax(post_transform)
-		log_prob = tensor.log(prob + numpy.float32(1e-8))
+		self.log_prob = tensor.log(prob + numpy.float32(1e-8))
+
 		#
-		loglikelihood_path = log_prob[
-			tensor.arange(log_prob.shape[0]), seq_action
+		loglikelihood_path = self.log_prob[
+			tensor.arange(self.log_prob.shape[0]), seq_action
 		]
+
 		loglikelihood_action = tensor.mean(
 				loglikelihood_path
 		)

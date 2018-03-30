@@ -134,7 +134,10 @@ def train_model(input_trainer):
 						data_process.seq_world_numpy,  # matrix of dim (len(one_data['cleanpath'])*78
 						data_process.seq_action_numpy  # index value of 1 in one hot vector of action
 				)
-				# print "---Cost_numpy___=",cost_numpy
+				print "Cost!!------", cost_numpy
+				print "type = ", type(cost_numpy)
+				print "shape = ", cost_numpy.shape
+				print "---Cost_numpy___=",cost_numpy
 				err += cost_numpy
 				if idx_data % 100 == 99:
 					print "training i-th out of N in map : ", (idx_data, max_steps, name_map)
@@ -215,6 +218,7 @@ def train_model(input_trainer):
 				bs.init_beam(
 						numpy.copy(pos_start), numpy.copy(pos_end)
 				)
+				print "data=",data
 				bs.search_func()
 				# Checks if the destination is reached
 				if bs.check_pos_end():
@@ -327,6 +331,7 @@ def test_model(input_tester):
 			'pos_destination': bs.finish_list[0]['pos_destination']
 		}
 		bs_results.append(result)
+		# print "RESULT=",result
 		#
 		bs.refresh_state()
 		#

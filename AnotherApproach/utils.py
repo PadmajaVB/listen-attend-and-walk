@@ -10,7 +10,10 @@ def random_weights(nrow, ncol):
     )
     return numpy.cast[float](values)
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> upstream/master
 def softmax(x):
 	# x is a vector
 	exp_x = numpy.exp(x - numpy.amax(x))
