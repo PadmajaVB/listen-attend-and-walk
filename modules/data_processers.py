@@ -192,7 +192,10 @@ class DataProcess(object):
             self.seq_action_numpy[idx_action] = numpy.argmax(
                 one_hot_vec_action
             )
-        # print "self.seq_action_numpy.shape=",self.seq_action_numpy.shape
+
+        # print "self.seq_lang_numpy.shape", self.seq_lang_numpy.shape
+        # print "self.seq_world_numpy.shape=", self.seq_world_numpy.shape
+        # print "self.seq_action_numpy.shape=", self.seq_action_numpy.shape
         # finished processing !
     #
     def creat_log(self, log_dict):
