@@ -49,6 +49,7 @@ def train(idx_data, map_name, input_variable, target_variable, action_seq, encod
         flag: train or validate
         max_length: Length of longest input instruction
     """
+    
     encoder_hidden = encoder.initHidden()
 
     if flag == "train":
