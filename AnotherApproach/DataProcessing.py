@@ -109,6 +109,8 @@ class ProcessData(object):
             seq_lang.append(word_vectors[word])
 
         self.seq_lang_numpy = numpy.array(seq_lang)
+        self.seq_lang_numpy = self.seq_lang_numpy.reshape((1, self.seq_lang_numpy.shape[0], self.seq_lang_numpy.shape[1]))
+        print "Shape 1 = ", self.seq_lang_numpy.shape
 
         """ Zero matrix of dim (len(one_data['cleanpath'])*78)"""
         self.seq_world_numpy = numpy.zeros(
@@ -173,6 +175,9 @@ class ProcessData(object):
             self.seq_action_numpy[idx_action] = numpy.argmax(
                 one_hot_vec_action
             )
+
+        self.seq_action_numpy = self.seq_action_numpy.reshape((1, 1, self.seq_action_numpy.shape[0]))
+        print "shape 2 = ", self.seq_action_numpy.shape
         # print "self.seq_action_numpy.shape=",self.seq_action_numpy.shape
         # finished processing !
         return self.seq_lang_numpy, self.seq_world_numpy, self.seq_action_numpy
