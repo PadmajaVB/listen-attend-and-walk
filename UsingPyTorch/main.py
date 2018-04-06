@@ -1,24 +1,42 @@
 from __future__ import unicode_literals, division
 import config
 import DataProcessing
-import time
 import models
 import torch
 from torch import optim
 import torch.nn as nn
 from torch.autograd import Variable
-import random
+import time
+import math
 
 use_cuda = torch.cuda.is_available()
 teacher_forcing_ratio = 0.5
-MAX_LENGTH = 25
+MAX_LENGTH = 46
 STOP = 3
+ENCODER_PATH = "./TrainedModel/encoder.pkl"
+DECODER_PATH = "./TrainedModel/decoder.pkl"
+
+
+def as_minutes(s):
+    m = math.floor(s / 60)
+    s -= m * 60
+    return '%dm %ds' % (m, s)
+
+
+def time_since(since, percent):
+    now = time.time()
+    s = now - since
+    es = s / percent
+    rs = es - s
+    return '%s (- %s)' % (as_minutes(s), as_minutes(rs))
 
 
 def train(idx_data, map_name, input_variable, target_variable, action_seq, encoder, decoder, encoder_optimizer,
-          decoder_optimizer, criterion, processed_data, max_length=MAX_LENGTH):
+          decoder_optimizer, criterion, processed_data, flag, max_length=MAX_LENGTH):
     """
     Args:
+        idx_data: index of the data in pkl file
+        map_name: name of the map on which the training is being done
         input_variable: seq_lang_numpy (torch.Tensor) -> Array
         target_variable: seq_world_numpy (torch.Tensor) -> Matrix
         action_seq: seq_action_numpy (torch.Tensor) -> Array
@@ -28,14 +46,15 @@ def train(idx_data, map_name, input_variable, target_variable, action_seq, encod
         decoder_optimizer: Optimizer applied to AttnDecoder (SGD)
         criterion: Loss function (NLLloss)
         processed_data: Object of ProcessData class
+        flag: train or validate
         max_length: Length of longest input instruction
     """
     encoder_hidden = encoder.initHidden()
 
-    encoder_optimizer.zero_grad()
-    decoder_optimizer.zero_grad()
+    if flag == "train":
+        encoder_optimizer.zero_grad()
+        decoder_optimizer.zero_grad()
 
-    print("---------------------------", input_variable.size())
     input_length = input_variable.size()[0]  # total no. of words
     action_length = action_seq.size()[0]  # total no. action sequence
 
@@ -44,31 +63,23 @@ def train(idx_data, map_name, input_variable, target_variable, action_seq, encod
 
     loss = 0
 
-    """ print this  """
-    count = 0
+    # count = 0
     for ei in range(input_length):
         encoder_output, encoder_hidden = encoder(input_variable[ei], encoder_hidden)
-        if count == 0:
-            print ("encoder_output: ", encoder_output)
-            print("encoder_output.shape() : ", encoder_output.size())
-            print("encoder_hidden: ", encoder_hidden)
-            print("encoder_hidden.shape(): ", encoder_hidden.size())
-            count = 1
+        # if count == 0:
+        #     print ("encoder_output: ", encoder_output)
+        #     print("encoder_output.shape() : ", encoder_output.size())
+        #     print("encoder_hidden: ", encoder_hidden)
+        #     print("encoder_hidden.shape(): ", encoder_hidden.size())
+        #     count = 1
         encoder_outputs[ei] = encoder_output[0][0]
 
-    print ("In train: ", encoder_outputs)
-    print()
-    print()
-    print ("TargetVariable[0].shape=",target_variable[0].size())
-    print ("TargetVariable[0]=",target_variable[0])
-    print ("TargetVariable[0]=",[target_variable[0]])
-
-    decoder_input = target_variable[0].view(1, -1)
+    decoder_input = target_variable[0]
     decoder_input = decoder_input.cuda() if use_cuda else decoder_input
 
-    decoder_hidden = encoder_hidden
+    decoder_hidden = encoder_hidden.view(1, 1, encoder.hidden_size)
 
-    use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
+    use_teacher_forcing = True if flag == "train" else False
 
     run_model = DataProcessing.RunModel()
 
@@ -80,25 +91,26 @@ def train(idx_data, map_name, input_variable, target_variable, action_seq, encod
         # Teacher forcing: Feed the target as the next input
         for di in range(action_length):
             decoder_output, decoder_hidden, decoder_attention = decoder(
-                decoder_input, decoder_hidden, encoder_outputs)
-            print "actionnnnnnnn",action_seq[di].data[0]
+                    decoder_input, decoder_hidden, encoder_outputs)
             loss += criterion(decoder_output, action_seq[di])
-            if di == action_length-1 or action_seq[di].data[0] == 3:
+            if di == action_length - 1 or action_seq[di].data[0] == 3:
                 break
-            decoder_input = target_variable[di+1]  # Teacher forcing
+            decoder_input = target_variable[di + 1]  # Teacher forcing
 
     else:
         # Without teacher forcing: use its own predictions as the next input
         for di in range(action_length):
             # decoder_output : (4,)
             decoder_output, decoder_hidden, decoder_attention = decoder(
-                decoder_input, decoder_hidden, encoder_outputs)
-            topv, topi = decoder_output.data.topk(1)
+                    decoder_input, decoder_hidden, encoder_outputs)
+
             # topv = top_value topi = top_index i.e index with highest probability
+            topv, topi = decoder_output.data.topk(1)
+
             ni = topi[0][0]  # coz, decoder_output is 3D
             '''
             'ni' is the action_sequence, so,
-            TODO
+            TODO:
             calculate the next position based on the current position
             calculate world state of next position
             decoder_input = world_state(next_position)
@@ -118,13 +130,14 @@ def train(idx_data, map_name, input_variable, target_variable, action_seq, encod
 
     loss.backward()
 
-    encoder_optimizer.step()
-    decoder_optimizer.step()
+    if flag == "train":
+        encoder_optimizer.step()
+        decoder_optimizer.step()
 
     return loss.data[0] / action_length
 
 
-def main():
+def trainIters(encoder, attn_decoder, n_iters, learning_rate, print_every=2, plot_every=100):
     # TODO preprocess the input file to get standard vectors
     configuration = config.get_config()
     filepath = configuration['datafile_path']
@@ -134,20 +147,20 @@ def main():
 
     """ Model designing part """
     # TODO design encoder
-
-    model_config = config.get_model_config()
-    num_input_words = model_config['dim_lang']
-    world_state_size = model_config['dim_world']
-    num_output_actions = model_config['dim_action']
-    hidden_size = model_config['hidden_size']
     # max_action_len = 30
 
-    encoder = models.EncoderRNN(num_input_words, hidden_size)
-    attn_decoder = models.AttnDecoderRNN (hidden_size, world_state_size, num_output_actions)
-    learning_rate = model_config['learning_rate']
+    start = time.time()
+    plot_losses = []
+    print_loss_total = 0  # Reset every print_every
+    plot_loss_total = 0  # Reset every plot_every
+    encoder_optimizer = optim.SGD(encoder.parameters(), lr=learning_rate)
+    decoder_optimizer = optim.SGD(attn_decoder.parameters(), lr=learning_rate)
+    count = 0
+
+    criterion = nn.NLLLoss()
 
     """ Training part """
-    for epi in range(configuration['max_epochs']):
+    for epi in range(n_iters):
         #
         print "training epoch ", epi
         #
@@ -161,20 +174,15 @@ def main():
         seq_world_numpy = []
         seq_action_numpy = []
 
-        print_loss_total = 0  # Reset every print_every
-        plot_loss_total = 0  # Reset every plot_every
-        encoder_optimizer = optim.SGD(encoder.parameters(), lr=learning_rate)
-        decoder_optimizer = optim.SGD(attn_decoder.parameters(), lr=learning_rate)
-
-        criterion = nn.NLLLoss()
-
         for name_map in configuration['maps_train']:
             max_steps = len(
                     processed_data.dict_data['train'][name_map]
             )
             print 'max_steps=', max_steps
+
             for idx_data, data in enumerate(processed_data.dict_data['train'][name_map]):
 
+                count += 1
                 # seq_lang_numpy, seq_world_numpy and seq_action_numpy will be set
                 seq_lang_numpy, seq_world_numpy, seq_action_numpy = processed_data.process_one_data(idx_data, name_map,
                                                                                                     'train')
@@ -184,15 +192,9 @@ def main():
                 seq_action_numpy = Variable(torch.LongTensor(seq_action_numpy).view(-1, 1))
 
                 """ trainer = Instantiates the model """
-                print("Seq_lang: ", seq_lang_numpy)
-                print("shape seq lang: ", type(seq_lang_numpy), seq_lang_numpy.size())
-                print("Seq_action: ", seq_action_numpy)
-                print("shape action", type(seq_action_numpy), seq_action_numpy.size())
-                print("Seq_world: ", seq_world_numpy)
-                print("shape world", type(seq_world_numpy), seq_world_numpy.size())
 
                 loss = train(idx_data, name_map, seq_lang_numpy, seq_world_numpy, seq_action_numpy, encoder,
-                attn_decoder, encoder_optimizer, decoder_optimizer, criterion, processed_data)
+                             attn_decoder, encoder_optimizer, decoder_optimizer, criterion, processed_data, flag = "train")
 
                 print_loss_total += loss
                 plot_loss_total += loss
@@ -200,30 +202,90 @@ def main():
                 if idx_data % 100 == 99:
                     print "training i-th out of N in map : ", (idx_data, max_steps, name_map)
 
+                if count % print_every == 0:
+                    print_loss_avg = print_loss_total / print_every
+                    print_loss_total = 0
+
+                    print "----------------calculating training loss------------"
+                    print "TimeSince=", time_since(start, count / n_iters)
+                    print "Itr=", count
+                    print " Percentage of code run=", count / n_iters * 100
+                    print "Loss=", print_loss_avg
+                    print "--------------------------------------------"
+                    print ""
+                    print ""
+
                 if idx_data == 20:
                     break
-            #
+
             num_steps += max_steps
         #
         train_err = err / num_steps
-        break
-    #
-    #
+
+        print "validating ... "
+        #
+        err = 0.0
+        num_steps = 0
+        dev_start = time.time()
+        #
+        for name_map in configuration['maps_train']:
+            max_steps = len(processed_data.dict_data['dev'][name_map])
+            for idx_data, data in enumerate(processed_data.dict_data['dev'][name_map]):
+                count += 1
+                # seq_lang_numpy, seq_world_numpy and seq_action_numpy will be set
+                seq_lang_numpy, seq_world_numpy, seq_action_numpy = processed_data.process_one_data(idx_data, name_map,
+                                                                                                    'train')
+
+                seq_lang_numpy = Variable(torch.LongTensor(seq_lang_numpy).view(-1, 1))
+                seq_world_numpy = Variable(torch.FloatTensor(seq_world_numpy))
+                seq_action_numpy = Variable(torch.LongTensor(seq_action_numpy).view(-1, 1))
+
+                """ trainer = Instantiates the model """
+
+                loss = train(idx_data, name_map, seq_lang_numpy, seq_world_numpy, seq_action_numpy, encoder,
+                attn_decoder, encoder_optimizer, decoder_optimizer, criterion, processed_data, flag = "validate")
+
+                print_loss_total += loss
+                plot_loss_total += loss
+
+                if idx_data % 100 == 99:
+                    print "training i-th out of N in map : ", (idx_data, max_steps, name_map)
+
+                if count % print_every == 0:
+                    print_loss_avg = print_loss_total / print_every
+                    print_loss_total = 0
+
+                    print "----------------calculating validation loss------------"
+                    print "TimeSince=", time_since(start, count / n_iters)
+                    print "Itr=", count
+                    print " Percentage of code run=", (count / n_iters) * 100
+                    print "Loss=", print_loss_avg
+                    print "--------------------------------------------"
+                    print ""
+                    print ""
+
+                if idx_data == 20:
+                    break
+
+            num_steps += max_steps
 
 
-# TODO design multi-level aligner
+def main():
+    model_config = config.get_model_config()
+    num_input_words = model_config['dim_lang']
+    world_state_size = model_config['dim_world']
+    num_output_actions = model_config['dim_action']
+    hidden_size = model_config['hidden_size']
+    learning_rate = model_config['learning_rate']
 
-# TODO design decoder
+    encoder = models.EncoderRNN(num_input_words, hidden_size, bidirectionality=True)
+    attn_decoder = models.AttnDecoderRNN(hidden_size, world_state_size, num_output_actions)
 
-""" Training the model """
-# TODO write training code
+    trainIters(encoder, attn_decoder, 1, learning_rate)
 
-# TODO map the o/p action sequence to the i/p instruction for effective backpropagation
+    torch.save(encoder, ENCODER_PATH)
+    torch.save(attn_decoder, DECODER_PATH)
 
-""" Testing the model """
-# TODO write testing code
-
-# TODO simulate the output
 
 if __name__ == '__main__':
     main()

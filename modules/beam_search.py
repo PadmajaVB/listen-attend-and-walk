@@ -15,6 +15,7 @@ import scipy.io
 from collections import defaultdict
 from theano.tensor.shared_randomstreams import RandomStreams
 import utils
+import matplotlib.pyplot as plt
 
 dtype = theano.config.floatX
 
@@ -57,8 +58,8 @@ class BeamSearchNeuralWalker(object):
 		self.model['W_out_hz'][:self.dim_model, :] = numpy.copy(
 				self.model['W_out_hz'][:self.dim_model, :] * self.drop_out_rate
 		)
-		print "type(model)", type(self.model)
-		print "self.model['W_out_hz'][:self.dim_model, :]=", self.model['W_out_hz'][:self.dim_model, :].shape, "self.model=", type(self.model['W_out_hz'])
+		# print "type(model)", type(self.model)
+		# print "self.model['W_out_hz'][:self.dim_model, :]=", self.model['W_out_hz'][:self.dim_model, :].shape, "self.model=", type(self.model['W_out_hz'])
 		#
 		#
 		self.ht_encode = numpy.zeros(
@@ -266,7 +267,7 @@ class BeamSearchNeuralWalker(object):
 
 	def decode_step(
 			self, feat_current_position,
-			htm1_action, ctm1_action
+			htm1_action, ctm1_action, flag
 	):
 		# xt_action.shape = (1,100)
 		xt_action = numpy.dot(
@@ -351,7 +352,8 @@ class BeamSearchNeuralWalker(object):
 		)
 		probt = exp_post_trans / numpy.sum(exp_post_trans)  # (4,)
 		log_probt = numpy.log(probt + numpy.float32(1e-8))  # (4,)
-		return xt_action, ht_action, ct_action, probt, log_probt
+
+		return xt_action, ht_action, ct_action, probt, log_probt, zt_action
 
 	def validate_step(self, idx_action, feat_current_position):
 		assert (
@@ -469,17 +471,19 @@ class BeamSearchNeuralWalker(object):
 		# this position must be in this map
 		#
 
-	def search_func(self):
+	def search_func(self, flag="validate"):
 		# print "search for target ... "
 		counter, max_counter = 0, 100
+		attentions = numpy.zeros((46, 724))
 		while ((len(self.finish_list) < self.size_beam) and (counter < max_counter)):
 			new_list = []
 			for item in self.beam_list:
 				# xt_item -- current world state, ht_item -- lstm state, ct_item -- context of the instruction
 				# probt_item, log_prot_item -- conditional prob distribution over the next action
-				xt_item, ht_item, ct_item, probt_item, log_probt_item = self.decode_step(
+				xt_item, ht_item, ct_item, probt_item, log_probt_item, zt_action = self.decode_step(
 						item['feat_current_position'],
-						item['htm1'], item['ctm1']
+						item['htm1'], item['ctm1'],
+						flag
 				)
 				top_k_list = range(probt_item.shape[0])  # (4,)
 				for top_idx_action in top_k_list:
