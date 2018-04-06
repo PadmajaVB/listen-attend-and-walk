@@ -69,7 +69,7 @@ class NeuralWalkerTrainer(object):
                 self.seq_lang, self.seq_world,
                 self.seq_action
             ],
-            outputs = self.neural_walker.log_prob,
+            outputs = self.neural_walker.cost,
             updates = self.optimizer.updates
         )
         #
