@@ -21,7 +21,7 @@ class SeqToSeq:
 	def build_model(self, X1, X2, y):
 		model = Sequential()
 		n_features = 100
-		model.add(LSTM(self.dim_model, input_shape=(524, n_features), return_sequences=True))
+		model.add(LSTM(self.dim_model, input_shape=(4, n_features), return_sequences=True))
 		model.add(AttentionDecoder(100, n_features))
 		model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['acc'])
 

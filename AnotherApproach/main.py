@@ -41,6 +41,7 @@ def main():
 				# np.concatenate((seq_world_numpy, seq_world))
 				# np.concatenate((seq_action_numpy, seq_action))
 
+
 				""" trainer = Instantiates the model """
 				model = models.SeqToSeq()
 				cost_numpy = model.build_model(
@@ -68,7 +69,7 @@ def main():
 
 """ Training the model """
 # TODO write training code
-git
+
 # TODO map the o/p action sequence to the i/p instruction for effective backpropagation
 
 """ Testing the model """
