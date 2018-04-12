@@ -8,13 +8,13 @@ import torch.nn as nn
 from torch.autograd import Variable
 import time
 import math
+import os
+import datetime
 
 use_cuda = torch.cuda.is_available()
 teacher_forcing_ratio = 0.5
 MAX_LENGTH = 46
 STOP = 3
-ENCODER_PATH = "./TrainedModel/encoder.pkl"
-DECODER_PATH = "./TrainedModel/decoder.pkl"
 
 
 def as_minutes(s):
@@ -235,7 +235,7 @@ def trainIters(encoder, attn_decoder, n_iters, learning_rate, print_every=2, plo
                 count += 1
                 # seq_lang_numpy, seq_world_numpy and seq_action_numpy will be set
                 seq_lang_numpy, seq_world_numpy, seq_action_numpy = processed_data.process_one_data(idx_data, name_map,
-                                                                                                    'train')
+                                                                                                    'dev')
 
                 seq_lang_numpy = Variable(torch.LongTensor(seq_lang_numpy).view(-1, 1))
                 seq_world_numpy = Variable(torch.FloatTensor(seq_world_numpy))
@@ -284,6 +284,19 @@ def main():
 
     trainIters(encoder, attn_decoder, 1, learning_rate)
 
+    id_process = os.getpid()
+    time_current = datetime.datetime.now().isoformat()
+    tag_model = '_PID=' + str(id_process) + '_TIME=' + time_current
+    path_track = './tracks/track' + tag_model + '/'
+
+    command_mkdir = 'mkdir -p ' + os.path.abspath(
+        path_track
+    )
+    os.system(command_mkdir)
+    #
+
+    ENCODER_PATH = path_track + 'encoder.pkl'
+    DECODER_PATH = path_track + 'decoder.pkl'
     torch.save(encoder, ENCODER_PATH)
     torch.save(attn_decoder, DECODER_PATH)
 
