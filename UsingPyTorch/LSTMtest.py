@@ -22,6 +22,7 @@ def evaluate(encoder, decoder, max_length=MAX_LENGTH):
 	all_attentions = []
 
 	for idx_data, data in enumerate(processed_data.dict_data['dev'][name_map]):
+		# print("data = ", data)
 		seq_lang_numpy, seq_world_numpy, seq_action_numpy = processed_data.process_one_data(idx_data, name_map, 'dev')
 
 		seq_lang = Variable(torch.LongTensor(seq_lang_numpy).view(-1, 1))
@@ -167,7 +168,7 @@ def main():
 	encoder = torch.load(ENCODER_PATH)
 	attn_decoder = torch.load(DECODER_PATH)
 	evaluate(encoder, attn_decoder)
-	input_sentence1 = "turn left at the gray stone carpet and move to the alley with octagon flooring on either side"
+	input_sentence1 = "go forward about two segments to the intersection containing the hatrack"
 	output_actions, attentions = SampleTest(encoder, attn_decoder, 5, input_sentence1)
 	showAttention(input_sentence1, output_actions, attentions)
 

@@ -79,11 +79,9 @@ class AttnDecoderRNN(nn.Module):
         attn_weights = torch.t(attn_weights)  # Transpose (1, 46)
         zt = torch.bmm(attn_weights.unsqueeze(0), scope_attr.unsqueeze(0))  # zt -- context vector (1, 1, 128)
 
-        world_state = self.dense(world_state.unsqueeze(0))
+        world_state = world_state.view(1, -1)
+        world_state = self.dense(world_state)
 
-        # print("Zt=", zt)
-        # print("world_state=", world_state)
-        # print("hidden=", hidden)
         output = torch.cat((zt[0], world_state, hidden[0]), 1)  # (1, 128*3)
         output = self.decoder_input(output).unsqueeze(0)  # (1, 1, 128)
         output, hidden = self.lstm(output, hidden)  # output --> st

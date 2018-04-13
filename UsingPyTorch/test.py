@@ -44,7 +44,7 @@ def evaluate(encoder, decoder, max_length=MAX_LENGTH):
 			# encoder_outputs[ei] is an extra term when compared to that in train function
 			encoder_outputs[ei] = encoder_outputs[ei] + encoder_output[0][0]
 
-		decoder_input = seq_world[0].view(1, -1)
+		decoder_input = seq_world[0]
 		decoder_input = decoder_input.cuda() if use_cuda else decoder_input
 
 		decoder_hidden = encoder_hidden.view(1, 1, encoder.hidden_size)
@@ -111,7 +111,7 @@ def SampleTest(encoder, decoder, idx_data, sentence, max_length=MAX_LENGTH):
 		# encoder_outputs[ei] is an extra term when compared to that in train function
 		encoder_outputs[ei] = encoder_outputs[ei] + encoder_output[0][0]
 
-	decoder_input = seq_world[0].view(1, -1)
+	decoder_input = seq_world[0]
 	decoder_input = decoder_input.cuda() if use_cuda else decoder_input
 
 	decoder_hidden = encoder_hidden.view(1, 1, encoder.hidden_size)
@@ -166,7 +166,7 @@ def main():
 	attn_decoder = torch.load(DECODER_PATH)
 	evaluate(encoder, attn_decoder)
 	input_sentence1 = "turn left at the gray stone carpet and move to the alley with octagon flooring on either side"
-	output_actions, attentions = SampleTest(encoder, attn_decoder, 7, input_sentence1)
+	output_actions, attentions = SampleTest(encoder, attn_decoder, 1, input_sentence1)
 	showAttention(input_sentence1, output_actions, attentions)
 
 

@@ -121,7 +121,6 @@ def train(idx_data, map_name, input_variable, target_variable, action_seq, encod
             # world state of next position
             decoder_input = run_model.get_feat_current_position(pos_curr, map_name)
             decoder_input = Variable(torch.FloatTensor([decoder_input]))
-
             decoder_input = decoder_input.cuda() if use_cuda else decoder_input
 
             loss += criterion(decoder_output, action_seq[di])
@@ -195,7 +194,7 @@ def trainIters(encoder, attn_decoder, n_iters, learning_rate, print_every=2, plo
                 """ trainer = Instantiates the model """
 
                 loss = train(idx_data, name_map, seq_lang_numpy, seq_world_numpy, seq_action_numpy, encoder,
-                             attn_decoder, encoder_optimizer, decoder_optimizer, criterion, processed_data, flag = "train")
+                             attn_decoder, encoder_optimizer, decoder_optimizer, criterion, processed_data, flag="train")
 
                 print_loss_total += loss
                 plot_loss_total += loss
@@ -244,7 +243,7 @@ def trainIters(encoder, attn_decoder, n_iters, learning_rate, print_every=2, plo
                 """ trainer = Instantiates the model """
 
                 loss = train(idx_data, name_map, seq_lang_numpy, seq_world_numpy, seq_action_numpy, encoder,
-                attn_decoder, encoder_optimizer, decoder_optimizer, criterion, processed_data, flag = "validate")
+                attn_decoder, encoder_optimizer, decoder_optimizer, criterion, processed_data, flag="validate")
 
                 print_loss_total += loss
                 plot_loss_total += loss

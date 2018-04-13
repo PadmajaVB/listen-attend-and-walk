@@ -76,6 +76,7 @@ def train(idx_data, map_name, input_variable, target_variable, action_seq, encod
         encoder_outputs[ei] = encoder_output[0][0]
 
     world_state = target_variable[0]
+    # print("World state initially : ", world_state)
     decoder_input = input_variable
     decoder_input = decoder_input.cuda() if use_cuda else decoder_input
 
@@ -121,9 +122,7 @@ def train(idx_data, map_name, input_variable, target_variable, action_seq, encod
             pos_curr = run_model.take_one_step(pos_curr, ni)
             # world state of next position
             world_state = run_model.get_feat_current_position(pos_curr, map_name)
-            # print("world_state = ", world_state.size)
             world_state = Variable(torch.FloatTensor(world_state))
-
             world_state = world_state.cuda() if use_cuda else world_state
 
             loss += criterion(decoder_output, action_seq[di])
@@ -218,8 +217,8 @@ def trainIters(encoder, attn_decoder, n_iters, learning_rate, print_every=2, plo
                     print ""
                     print ""
 
-                if idx_data == 20:
-                    break
+                # if idx_data == 20:
+                #     break
 
             num_steps += max_steps
         #
@@ -267,8 +266,8 @@ def trainIters(encoder, attn_decoder, n_iters, learning_rate, print_every=2, plo
                     print ""
                     print ""
 
-                if idx_data == 20:
-                    break
+                # if idx_data == 20:
+                #     break
 
             num_steps += max_steps
 
@@ -284,7 +283,7 @@ def main():
     encoder = LSTMmodel.EncoderRNN(num_input_words, hidden_size, bidirectionality=True)
     attn_decoder = LSTMmodel.AttnDecoderRNN(num_input_words, hidden_size, world_state_size, num_output_actions)
 
-    trainIters(encoder, attn_decoder, 1, learning_rate)
+    trainIters(encoder, attn_decoder, 5, learning_rate)
 
     id_process = os.getpid()
     time_current = datetime.datetime.now().isoformat()
