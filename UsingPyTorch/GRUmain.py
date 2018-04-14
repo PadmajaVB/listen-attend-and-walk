@@ -1,7 +1,7 @@
 from __future__ import unicode_literals, division
 import config
 import DataProcessing
-import LSTMmodel
+import GRUmodel
 import torch
 from torch import optim
 import torch.nn as nn
@@ -52,9 +52,9 @@ def train(idx_data, map_name, input_variable, target_variable, action_seq, encod
 
     encoder_hidden = encoder.initHidden()
 
-    # if flag == "train"
-    encoder_optimizer.zero_grad()
-    decoder_optimizer.zero_grad()
+    if flag == "train":
+        encoder_optimizer.zero_grad()
+        decoder_optimizer.zero_grad()
 
     input_length = input_variable.size()[0]  # total no. of words
     action_length = action_seq.size()[0]  # total no. action sequence
@@ -132,9 +132,9 @@ def train(idx_data, map_name, input_variable, target_variable, action_seq, encod
 
     loss.backward()
 
-    # if flag == "train":
-    encoder_optimizer.step()
-    decoder_optimizer.step()
+    if flag == "train":
+        encoder_optimizer.step()
+        decoder_optimizer.step()
 
     return loss.data[0] / action_length
 
@@ -287,8 +287,8 @@ def main():
     hidden_size = model_config['hidden_size']
     learning_rate = model_config['learning_rate']
 
-    encoder = LSTMmodel.EncoderRNN(num_input_words, hidden_size, bidirectionality=True)
-    attn_decoder = LSTMmodel.AttnDecoderRNN(num_input_words, hidden_size, world_state_size, num_output_actions)
+    encoder = GRUmodel.EncoderRNN(num_input_words, hidden_size, bidirectionality=True)
+    attn_decoder = GRUmodel.AttnDecoderRNN(num_input_words, hidden_size, world_state_size, num_output_actions)
 
     trainIters(encoder, attn_decoder, 50, learning_rate)
 
