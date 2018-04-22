@@ -155,8 +155,8 @@ def trainIters(encoder, attn_decoder, n_iters, learning_rate, print_every=1000, 
     plot_losses = []
     print_loss_total = 0  # Reset every print_every
     plot_loss_total = 0  # Reset every plot_every
-    encoder_optimizer = optim.Adam(encoder.parameters(), lr=learning_rate)
-    decoder_optimizer = optim.Adam(attn_decoder.parameters(), lr=learning_rate)
+    encoder_optimizer = optim.SGD(encoder.parameters(), lr=learning_rate)
+    decoder_optimizer = optim.SGD(attn_decoder.parameters(), lr=learning_rate)
     count = 0
 
     criterion = nn.NLLLoss()
@@ -277,6 +277,21 @@ def trainIters(encoder, attn_decoder, n_iters, learning_rate, print_every=1000, 
         avg_val_err = val_err / num_steps
 
         print "Epoch = ", epi, "  Train error = ", avg_train_err, "  Validation error =", avg_val_err
+        id_process = os.getpid()
+        time_current = datetime.datetime.now().isoformat()
+        tag_model = '_PID=' + str(id_process) + '_TIME=' + time_current
+        path_track = './tracks/track' + "_" + str(epi) + "Epoch_" + tag_model + '/'
+
+        command_mkdir = 'mkdir -p ' + os.path.abspath(
+            path_track
+        )
+        os.system(command_mkdir)
+        #
+
+        ENCODER_PATH = path_track + 'encoder.pkl'
+        DECODER_PATH = path_track + 'decoder.pkl'
+        torch.save(encoder, ENCODER_PATH)
+        torch.save(attn_decoder, DECODER_PATH)
 
 
 def main():
@@ -290,23 +305,23 @@ def main():
     encoder = GRUmodel.EncoderRNN(num_input_words, hidden_size, bidirectionality=True)
     attn_decoder = GRUmodel.AttnDecoderRNN(num_input_words, hidden_size, world_state_size, num_output_actions)
 
-    trainIters(encoder, attn_decoder, 50, learning_rate)
+    trainIters(encoder, attn_decoder, 35, learning_rate)
 
-    id_process = os.getpid()
-    time_current = datetime.datetime.now().isoformat()
-    tag_model = '_PID=' + str(id_process) + '_TIME=' + time_current
-    path_track = './tracks/track' + tag_model + '/'
-
-    command_mkdir = 'mkdir -p ' + os.path.abspath(
-        path_track
-    )
-    os.system(command_mkdir)
-    #
-
-    ENCODER_PATH = path_track + 'encoder.pkl'
-    DECODER_PATH = path_track + 'decoder.pkl'
-    torch.save(encoder, ENCODER_PATH)
-    torch.save(attn_decoder, DECODER_PATH)
+    # id_process = os.getpid()
+    # time_current = datetime.datetime.now().isoformat()
+    # tag_model = '_PID=' + str(id_process) + '_TIME=' + time_current
+    # path_track = './tracks/track' + tag_model + '/'
+	#
+    # command_mkdir = 'mkdir -p ' + os.path.abspath(
+    #     path_track
+    # )
+    # os.system(command_mkdir)
+    # #
+	#
+    # ENCODER_PATH = path_track + 'encoder.pkl'
+    # DECODER_PATH = path_track + 'decoder.pkl'
+    # torch.save(encoder, ENCODER_PATH)
+    # torch.save(attn_decoder, DECODER_PATH)
 
 
 if __name__ == '__main__':
