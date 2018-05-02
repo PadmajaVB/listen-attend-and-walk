@@ -57,12 +57,8 @@ class AttnDecoderRNN(nn.Module):
         embedded = self.dense(input)
         embedded = embedded.view(1, 1, -1)
         embedded = self.dropout(embedded)
-        # print("embedded[0] = ", embedded[0])  # (1,128)
-        # print("hidden[0] = ", hidden[0])  # (1, 128)
         attn_weights = F.softmax(
             self.attn(torch.cat((embedded[0], hidden[0]), 1)), dim=1)  # attn_weights (1,46)  encoder_outputs (46, 128)
-        # print("attn_weights = ", attn_weights)
-        # print("encoder_outputs = ", encoder_outputs)
         attn_applied = torch.bmm(attn_weights.unsqueeze(0),
                                  encoder_outputs.unsqueeze(0))
 
@@ -73,9 +69,6 @@ class AttnDecoderRNN(nn.Module):
         output, hidden = self.gru(output, hidden)
 
         output = F.log_softmax(self.out(output[0]), dim=1)
-        # print("output = ", output)  # (1, 4)
-        # print("hidden = ", hidden)  # (1, 1, 128)
-        # print("attn_weights = ", attn_weights)  # (1, 46)
         return output, hidden, attn_weights
 
     def initHidden(self):

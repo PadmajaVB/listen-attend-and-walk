@@ -15,7 +15,7 @@ DECODER_PATH = "./TrainedModel/decoder.pkl"
 def evaluate(encoder, decoder, max_length=MAX_LENGTH):
 	configuration = config.get_config()
 	filepath = configuration['datafile_path']
-	name_map = configuration['map_test']
+	name_map = configuration['map_test'][0]
 	processed_data = DataProcessing.ProcessData(filepath)
 	run_model = DataProcessing.RunModel()
 	all_actions = []
@@ -82,7 +82,7 @@ def evaluate(encoder, decoder, max_length=MAX_LENGTH):
 def SampleTest(encoder, decoder, idx_data, sentence, max_length=MAX_LENGTH):
 	configuration = config.get_config()
 	filepath = configuration['datafile_path']
-	name_map = configuration['map_test']
+	name_map = configuration['map_test'][0]
 	processed_data = DataProcessing.ProcessData(filepath)
 	run_model = DataProcessing.RunModel()
 	all_actions = []
@@ -165,8 +165,12 @@ def main():
 	encoder = torch.load(ENCODER_PATH)
 	attn_decoder = torch.load(DECODER_PATH)
 	evaluate(encoder, attn_decoder)
-	input_sentence1 = "turn left at the gray stone carpet and move to the alley with octagon flooring on either side"
-	output_actions, attentions = SampleTest(encoder, attn_decoder, 1, input_sentence1)
+	# input_sentence1 = "turn left at the gray stone carpet and move to the alley with octagon flooring on either side"
+	# input_sentence2 = "take a left onto the brick patch and go all the way down until you get to where there are butterflies on the wall"
+	# idx = 53; GT: [0, 1, 0, 0, 0, 0, 3]
+	input_sentence1 = "take a left onto the red brick and go a ways down until you come to the section with the butterflies on the wall"
+	# idx = 82; GT: [1, 0, 0, 0, 0, 3]
+	output_actions, attentions = SampleTest(encoder, attn_decoder, 82, input_sentence1)
 	showAttention(input_sentence1, output_actions, attentions)
 
 
