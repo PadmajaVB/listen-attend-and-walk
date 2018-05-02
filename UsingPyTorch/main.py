@@ -174,7 +174,7 @@ def trainIters(encoder, attn_decoder, n_iters, learning_rate, print_every=2, plo
         seq_world_numpy = []
         seq_action_numpy = []
 
-        for name_map in configuration['maps_train']:
+        for name_map in configuration['maps_train'][0]:
             max_steps = len(
                     processed_data.dict_data['train'][name_map]
             )
@@ -228,7 +228,7 @@ def trainIters(encoder, attn_decoder, n_iters, learning_rate, print_every=2, plo
         num_steps = 0
         dev_start = time.time()
         #
-        for name_map in configuration['maps_train']:
+        for name_map in configuration['maps_train'][0]:
             max_steps = len(processed_data.dict_data['dev'][name_map])
             for idx_data, data in enumerate(processed_data.dict_data['dev'][name_map]):
                 count += 1
