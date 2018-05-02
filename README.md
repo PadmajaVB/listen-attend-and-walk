@@ -6,7 +6,7 @@ Here is the [link](https://arxiv.org/abs/1506.04089) to the base paper that is b
 
 Language used : Python 2.7
 
-## Prerequiisites
+## Prerequisites
 
 * [Anaconda](https://www.continuum.io/) - Anaconda includes all the Python-related dependencies
 * [Theano](http://deeplearning.net/software/theano/) - Computational graphs are built on Theano
