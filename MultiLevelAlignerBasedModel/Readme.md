@@ -1,6 +1,6 @@
 # Multi level aligner based model
 
-This model uses multi level aligner to generate the context vector. The base paper of this project can be found [here](http://www.aaai.org/ocs/index.php/AAAI/AAAI16/paper/download/12522/12021)
+This model uses multi level aligner to generate the context vector. The base paper of this project can be found [here](http://www.aaai.org/ocs/index.php/AAAI/AAAI16/paper/download/12522/12021).
 
 Language used : Python 2.7
 
@@ -15,7 +15,9 @@ Language used : Python 2.7
 For training the model, two strategies are followed:
 
 1) Training the model on two maps and testing explicitly on the third map.
+
 -- for training, "grid" and "jelly" maps(virtual environments) are used
+
 -- for testing, "l" map is used 
 
 ### Train model
