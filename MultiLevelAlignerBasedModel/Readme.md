@@ -12,9 +12,9 @@ Language used : Python 2.7
 
 ## Instructions
 
-For training the model, two strategies are followed:
+For training the model, **two strategies** are followed:
 
-1) Training the model on two maps and testing explicitly on the third map.
+### Strategy 1: Training the model on two maps and testing explicitly on the third map.
 
 -- for training, "grid" and "jelly" maps(virtual environments) are used
 
@@ -32,7 +32,7 @@ python test.py -fp PATH
 ```
 **PATH** stands for the path to the folder containing **encoder.pkl** and **decoder.pkl** which lies within the _tracks_ folder. This folder is created by the end of training.
 
-2) Training and testing the model by using 3 fold cross validation.
+### Strategy 2: Training and testing the model by using 3 fold cross validation.
 ```
 python LSTMthreefold.py
 ```
