@@ -4,15 +4,28 @@ import torch
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import argparse
+import numpy as np
+import simulation.main as sm
 
 use_cuda = torch.cuda.is_available()
 MAX_LENGTH = 46
 STOP = 3
-ENCODER_PATH = "./TrainedModel/encoder.pkl"
-DECODER_PATH = "./TrainedModel/decoder.pkl"
 
 
-def evaluate(encoder, decoder, max_length=MAX_LENGTH):
+def check_position_end(pos_current, pos_destination):
+	diff_pos = np.sum(
+			np.abs(
+					pos_current - pos_destination
+			)
+	)
+	if diff_pos < 0.5:
+		return True
+	else:
+		return False
+
+
+def evaluate(encoder, decoder, tag_split, max_length=MAX_LENGTH):
 	configuration = config.get_config()
 	filepath = configuration['datafile_path']
 	name_map = configuration['map_test'][0]
@@ -21,8 +34,15 @@ def evaluate(encoder, decoder, max_length=MAX_LENGTH):
 	all_actions = []
 	all_attentions = []
 
-	for idx_data, data in enumerate(processed_data.dict_data['dev'][name_map]):
-		seq_lang_numpy, seq_world_numpy, seq_action_numpy = processed_data.process_one_data(idx_data, name_map, 'dev')
+	cnt_success = 0
+
+	for idx_data, data in enumerate(processed_data.dict_data[tag_split][name_map]):
+		actions = []
+		for act in data['action']:
+			actions.append(np.argmax(act))
+
+		seq_lang_numpy, seq_world_numpy, seq_action_numpy = processed_data.process_one_data(idx_data, name_map,
+																							tag_split)
 
 		seq_lang = Variable(torch.LongTensor(seq_lang_numpy).view(-1, 1))
 		seq_world = Variable(torch.FloatTensor(seq_world_numpy))
@@ -30,7 +50,7 @@ def evaluate(encoder, decoder, max_length=MAX_LENGTH):
 
 		input_length = seq_lang.size()[0]
 
-		pos_start, pos_end = processed_data.get_pos(idx_data, name_map, 'dev')
+		pos_start, pos_end = processed_data.get_pos(idx_data, name_map, tag_split)
 
 		pos_curr = pos_start
 
@@ -74,17 +94,38 @@ def evaluate(encoder, decoder, max_length=MAX_LENGTH):
 		all_actions.append(decoded_actions)
 		all_attentions.append(decoder_attentions[:di + 1])
 
+		if check_position_end(pos_curr, data['cleanpath'][-1]):
+			cnt_success += 1
+
 		print "decoded action = ", decoded_actions
 
-	return all_actions, all_attentions
+	return cnt_success, all_actions, all_attentions
 
 
-def SampleTest(encoder, decoder, idx_data, sentence, max_length=MAX_LENGTH):
+def get_data_tuple(indx, sentence, processed_data, map_name):
+	sentence = sentence.split()
+	data_tuple = None
+	for idx, datatuple in enumerate(processed_data.raw_data[map_name]):
+		if sentence == datatuple['instruction']:
+			data_tuple = datatuple
+			print "Data tuple: ", data_tuple
+			# print "Index : ", idx_data
+			# print "Dataaaaaaaaaaaa : ", data_tuple
+			break
+	idx_data = indx
+	return idx_data, data_tuple['cleanpath']
+
+
+def SampleTest(encoder, decoder, idx_data, sentence, map_name, max_length=MAX_LENGTH):
+	""" idx_data: this is the index number of test data of 'l' map's dev set"""
 	configuration = config.get_config()
 	filepath = configuration['datafile_path']
 	name_map = configuration['map_test'][0]
 	processed_data = DataProcessing.ProcessData(filepath)
 	run_model = DataProcessing.RunModel()
+
+	idx_data, path = get_data_tuple(idx_data, sentence, processed_data, map_name)
+
 	all_actions = []
 	all_attentions = []
 	print "Given instruction:   ", sentence
@@ -140,7 +181,7 @@ def SampleTest(encoder, decoder, idx_data, sentence, max_length=MAX_LENGTH):
 
 	print "decoded action = ", decoded_actions
 
-	return decoded_actions, decoder_attentions
+	return decoded_actions, decoder_attentions[:di + 1], path
 
 
 def showAttention(input_sentence, output_actions, attentions):
@@ -162,15 +203,35 @@ def showAttention(input_sentence, output_actions, attentions):
 
 
 def main():
+	parser = argparse.ArgumentParser(
+			description='Testing model ... '
+	)
+	parser.add_argument(
+			'-fp', '--FilePretrain', required=True,
+			help='Path of the trained model'
+	)
+	args = parser.parse_args()
+	assert (args.FilePretrain is not None)
+	PATH = args.FilePretrain
+	ENCODER_PATH = PATH + "/encoder.pkl"
+	DECODER_PATH = PATH + "/decoder.pkl"
+
+	map_name = "l"
+
 	encoder = torch.load(ENCODER_PATH)
 	attn_decoder = torch.load(DECODER_PATH)
-	evaluate(encoder, attn_decoder)
-	# input_sentence1 = "turn left at the gray stone carpet and move to the alley with octagon flooring on either side"
-	input_sentence1 = "take a left onto the red brick and go a ways down until you come to the section with the butterflies on the wall"
+
+	input_sentence1 = "go foward then make a left keep going down this hallway to you get to the end"
+	# idx = 5
+
+	# input_sentence1 = "take a left onto the red brick and go a ways down until you come to the section with the butterflies on the wall"
 	# idx = 82; GT = [1, 0, 0, 0, 0, 3]
 
-	output_actions, attentions = SampleTest(encoder, attn_decoder, 82, input_sentence1)
+	input_sentence1 = input_sentence1.lower()
+	output_actions, attentions, path = SampleTest(encoder, attn_decoder, 5, input_sentence1, map_name)
 	showAttention(input_sentence1, output_actions, attentions)
+	print "Path = ", path
+	sm.simulate(path, output_actions)
 
 
 if __name__ == '__main__':

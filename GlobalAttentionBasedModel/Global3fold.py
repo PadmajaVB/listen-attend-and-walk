@@ -413,7 +413,7 @@ def main():
     encoder = models.EncoderRNN(num_input_words, hidden_size, bidirectionality=True)
     attn_decoder = models.AttnDecoderRNN(hidden_size, world_state_size, num_output_actions)
 
-    trainIters(encoder, attn_decoder, 3, learning_rate)
+    trainIters(encoder, attn_decoder, 2, learning_rate)
 
 
 if __name__ == '__main__':
