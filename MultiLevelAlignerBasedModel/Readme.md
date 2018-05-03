@@ -16,9 +16,9 @@ For training the model, **two strategies** are followed:
 
 ### Strategy 1: Training the model on two maps and testing explicitly on the third map.
 
--- for training, "grid" and "jelly" maps(virtual environments) are used
+* For training: "grid" and "jelly" maps(virtual environments) are used
 
--- for testing, "l" map is used 
+* For testing: "l" map is used 
 
 ### Train model
 ```
