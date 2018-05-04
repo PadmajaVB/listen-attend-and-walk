@@ -1,0 +1,33 @@
+# define some colors (R, G, B)
+BLACK = (0, 0, 0)
+YELLOW = (255, 255, 0)
+PINK = (255, 182, 193)
+GREEN = (0, 255, 0)
+BROWN = (165, 42, 42)
+VIOLET = (238, 130, 238)
+ORANGE = (255, 165, 0)
+BLUE = (0, 0, 255)
+LIGHTGREY = (100, 100, 100)
+WHITE = (255, 255, 255)
+DARKGREY = (40, 40, 40)
+RED = (255, 0, 0)
+DARKGREEN = (0, 100, 0)
+
+# game settings
+WIDTH = 630   # 16 * 64 or 32 * 32 or 64 * 16
+HEIGHT = 940  # 16 * 48 or 32 * 24 or 64 * 12
+FPS = 60
+TITLE = "Listen, Attend, and Walk Simulation"
+BGCOLOR = WHITE
+
+TILESIZE = 35
+GRIDWIDTH = WIDTH / TILESIZE
+GRIDHEIGHT = HEIGHT / TILESIZE
+
+# Player settings
+PLAYER_SPEED = 150.0
+PLAYER_ROT_SPEED = 250.0
+PLAYER_IMG0 = 'playerPHOTO0.png'
+PLAYER_IMG90 = 'playerPHOTO90.png'
+PLAYER_IMG180 = 'playerPHOTO180.png'
+PLAYER_IMG270 = 'playerPHOTO270.png'

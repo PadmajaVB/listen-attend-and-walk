@@ -17,7 +17,7 @@ class ProcessData(object):
 		#
 		#
 		with open(self.datafile_path + 'databag3.pickle', 'r') as f:
-			raw_data = pickle.load(f)
+			self.raw_data = pickle.load(f)
 		with open(self.datafile_path + 'valselect.pickle', 'r') as f:
 			val_set = pickle.load(f)
 		with open(self.datafile_path + 'stat.pickle', 'r') as f:
@@ -49,7 +49,7 @@ class ProcessData(object):
 		for name_map in self.names_map:
 			self.dict_data['train'][name_map] = []
 			self.dict_data['dev'][name_map] = []
-			for idx_data, data in enumerate(raw_data[name_map]):
+			for idx_data, data in enumerate(self.raw_data[name_map]):
 				if idx_data in val_set[name_map]:
 					"""100 instructions per map"""
 					self.dict_data['dev'][name_map].append(data)

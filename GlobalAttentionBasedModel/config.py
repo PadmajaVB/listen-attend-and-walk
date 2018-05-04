@@ -8,7 +8,7 @@ def get_config():
 	input_params['max_epochs'] = 2
 	input_params['seed'] = 12345
 	input_params['datafile_path'] = "./data/"
-	input_params['save_filepath'] = "./Tracks/"
+	input_params['save_filepath'] = "./tracks/"
 	input_params['word_embedding'] = "./data/WordEmbeddings.bin"
 	input_params['folds'] = 3
 

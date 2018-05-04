@@ -1,34 +1,28 @@
 # listen-attend-and-walk
+Code for converting natural language instructions into its corresponding action sequence.
 
-Converting natural language instructions into its corresponding action sequence.  
+We have followed **two different approches** to solve this problem
 
-Here is the [link](https://arxiv.org/abs/1506.04089) to the base paper that is being referred. 
+### First approach : Using Multi-level aligner based model
 
-Language used : Python 2.7
+* This uses both high-level and low level representation of the input sentence to calculate the context vector. Refer [this](http://www.aaai.org/ocs/index.php/AAAI/AAAI16/paper/download/12522/12021) paper for the complete architecture. 
 
-## Prerequisites
+* PyTorch implementation of this approach can be found in **MultiLevelAlignerBasedModel** folder.
 
-* [Anaconda](https://www.continuum.io/) - Anaconda includes all the Python-related dependencies
-* [Theano](http://deeplearning.net/software/theano/) - Computational graphs are built on Theano
-* [ArgParse](https://docs.python.org/2/howto/argparse.html) - Command line parsing in Python
+* Scratch code for this approach can be found in **CodeFromScratch** folder.
 
-## Instructions
+### Second approch : Using Global attention based model
 
-### Train model
+* This only uses the high level representation of the input sentence to calculate the context vector. Refer [this](https://arxiv.org/pdf/1508.04025.pdf) paper for the complete architecture.
 
-```
-python train_model.py 
-```
+* PyTorch implementation of this approach can be found in **GlobalAttentionBasedModel** folder.
 
-### Test model
+**AnotherApproach** folder contains keras implementation. This approach is still in progress, any sort of contribution in building the custom keras layer for multi-level aligner is most welcome.
 
-```
-python test_model.py -fp PATH
-```
-**PATH** stands for the path to the file **model.pkl** which lies within the _tracks_ folder. This folder is created by the end of training.  
+## Contributers
 
-The SAIL route instruction dataset has been downloaded from [here](http://www.cs.utexas.edu/users/ml/clamp/navigation/).
+This repository is created and maintained by
 
-The following [code](https://github.com/klb3713/sentence2vec) has been used for embedding sentences to vectors. It uses the skip-gram model.
-
-This project is built using Hongyuan Mei's [code](https://github.com/HMEIatJHU/NeuralWalker) as base. 
+* [Padmaja Bhagwat](https://github.com/PadmajaVB)
+* [Manisha Jhawar](https://github.com/ManishaJhawar)
+* [Nitya C K](https://github.com/NityaCK)

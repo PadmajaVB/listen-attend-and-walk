@@ -137,7 +137,7 @@ def train(idx_data, map_name, input_variable, target_variable, action_seq, encod
     return loss.data[0] / action_length
 
 
-def trainIters(encoder, attn_decoder, n_iters, learning_rate, print_every=2, plot_every=100):
+def trainIters(encoder, attn_decoder, n_iters, learning_rate, print_every=1000, plot_every=100):
     # TODO preprocess the input file to get standard vectors
     configuration = config.get_config()
     filepath = configuration['datafile_path']
@@ -164,7 +164,7 @@ def trainIters(encoder, attn_decoder, n_iters, learning_rate, print_every=2, plo
         #
         print "training epoch ", epi
         #
-        err = 0.0
+        train_err = 0.0
         num_steps = 0
         # TODO: shuffle the training data and train this epoch
         ##
@@ -196,6 +196,7 @@ def trainIters(encoder, attn_decoder, n_iters, learning_rate, print_every=2, plo
                 loss = train(idx_data, name_map, seq_lang_numpy, seq_world_numpy, seq_action_numpy, encoder,
                              attn_decoder, encoder_optimizer, decoder_optimizer, criterion, processed_data, flag="train")
 
+                train_err += loss
                 print_loss_total += loss
                 plot_loss_total += loss
 
@@ -215,16 +216,16 @@ def trainIters(encoder, attn_decoder, n_iters, learning_rate, print_every=2, plo
                     print ""
                     print ""
 
-                if idx_data == 20:
-                    break
+                # if idx_data == 20:
+                #     break
 
             num_steps += max_steps
         #
-        train_err = err / num_steps
+        avg_train_err = train_err / num_steps
 
         print "validating ... "
         #
-        err = 0.0
+        val_err = 0.0
         num_steps = 0
         dev_start = time.time()
         #
@@ -245,6 +246,7 @@ def trainIters(encoder, attn_decoder, n_iters, learning_rate, print_every=2, plo
                 loss = train(idx_data, name_map, seq_lang_numpy, seq_world_numpy, seq_action_numpy, encoder,
                 attn_decoder, encoder_optimizer, decoder_optimizer, criterion, processed_data, flag="validate")
 
+                val_err += loss
                 print_loss_total += loss
                 plot_loss_total += loss
 
@@ -264,10 +266,30 @@ def trainIters(encoder, attn_decoder, n_iters, learning_rate, print_every=2, plo
                     print ""
                     print ""
 
-                if idx_data == 20:
-                    break
+                # if idx_data == 20:
+                #     break
 
             num_steps += max_steps
+
+        avg_val_error = val_err/ num_steps
+        print "Epoch = ", epi, "  Train error = ", avg_train_err, "  Validation error = ", avg_val_error
+
+        tracks = configuration['save_filepath']
+        id_process = os.getpid()
+        time_current = datetime.datetime.now().isoformat()
+        tag_model = '_PID=' + str(id_process) + '_TIME=' + time_current
+        path_track = tracks + 'track' + "_Global_Epoch_" + str(epi) + "_" + tag_model + '/'
+
+        command_mkdir = 'mkdir -p ' + os.path.abspath(
+            path_track
+        )
+        os.system(command_mkdir)
+        #
+
+        ENCODER_PATH = path_track + 'encoder.pkl'
+        DECODER_PATH = path_track + 'decoder.pkl'
+        torch.save(encoder, ENCODER_PATH)
+        torch.save(attn_decoder, DECODER_PATH)
 
 
 def main():
@@ -281,23 +303,8 @@ def main():
     encoder = models.EncoderRNN(num_input_words, hidden_size, bidirectionality=True)
     attn_decoder = models.AttnDecoderRNN(hidden_size, world_state_size, num_output_actions)
 
-    trainIters(encoder, attn_decoder, 1, learning_rate)
-
-    id_process = os.getpid()
-    time_current = datetime.datetime.now().isoformat()
-    tag_model = '_PID=' + str(id_process) + '_TIME=' + time_current
-    path_track = './tracks/track' + tag_model + '/'
-
-    command_mkdir = 'mkdir -p ' + os.path.abspath(
-        path_track
-    )
-    os.system(command_mkdir)
-    #
-
-    ENCODER_PATH = path_track + 'encoder.pkl'
-    DECODER_PATH = path_track + 'decoder.pkl'
-    torch.save(encoder, ENCODER_PATH)
-    torch.save(attn_decoder, DECODER_PATH)
+    num_epochs = 2
+    trainIters(encoder, attn_decoder, num_epochs, learning_rate)
 
 
 if __name__ == '__main__':
