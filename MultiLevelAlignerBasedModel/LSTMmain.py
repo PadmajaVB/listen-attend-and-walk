@@ -69,9 +69,8 @@ def train(idx_data, map_name, input_variable, target_variable, action_seq, encod
         encoder_output, encoder_hidden = encoder(input_variable[ei], encoder_hidden)
         # if count == 0:
         #     print ("encoder_output: ", encoder_output)
-        #     print("encoder_output.shape() : ", encoder_output.size())
         #     print("encoder_hidden: ", encoder_hidden)
-        #     print("encoder_hidden.shape(): ", encoder_hidden.size())
+        #     print("input_variable=",input_variable[ei])
         #     count = 1
         encoder_outputs[ei] = encoder_output[0][0]
 

@@ -17,7 +17,9 @@ class EncoderRNN(nn.Module):
             self.hidden_size2 = hidden_size // 2
         else:
             self.hidden_size = hidden_size
-        self.embedding = nn.Embedding(input_size, hidden_size)
+
+        """input_size = 524; hidden_size = 128"""
+        self.embedding = nn.Embedding(input_size, hidden_size)  # 'input_size' no. of tensors each of size 'hidden_size'
         " Set bi-directionality = True "
         self.lstm = nn.LSTM(hidden_size, self.hidden_size2, bidirectional=True)
 
@@ -39,7 +41,7 @@ class EncoderRNN(nn.Module):
 
 
 class AttnDecoderRNN(nn.Module):
-    # hidden = 256, output_size = 2925
+    # hidden = 256, output_size = 4
     def __init__(self, input_size, hidden_size, world_state_size, output_size, dropout_p=0.1, max_length=MAX_LENGTH):
         super(AttnDecoderRNN, self).__init__()
         self.input_size = input_size
@@ -64,7 +66,7 @@ class AttnDecoderRNN(nn.Module):
 
     def forward(self, input, world_state, hidden, encoder_outputs):
         # encoder_outputs = encoder_outputs.unsqueeze(0)  # (1, 46, 128)
-        embed = self.embedding(input)  # Padding?
+        embed = self.embedding(input)
         embedded = Variable(torch.zeros(self.max_length, self.hidden_size))
 
         """Error : copy.copy"""
@@ -72,8 +74,11 @@ class AttnDecoderRNN(nn.Module):
             embedded[idx] = e
         # embedded = embedded.view(1, embedded.shape[0], embedded.shape[1])  # (1, 46, 128)
 
+        """ combining low-level (x) and high-level (h) input representation """
         scope_attr = self.input_hidden_combine(torch.cat((embedded, encoder_outputs), 1))  # (46, 128)
-        beta_inprocess = scope_attr + hidden[0][0]  # hidden[0] = (1, 128),  (46, 128) + (1, 128) = (46, 128)
+
+        """ adding decoder's prev. hidden state to it """
+        beta_inprocess = scope_attr + hidden[0][0]  # hidden[0][0] = (1, 128);  (46, 128) + (1, 128) = (46, 128)
         beta = F.tanh(beta_inprocess)  # (46, 128)
         beta = self.transform_beta(beta)  # (46, 1)
 
