@@ -38,5 +38,3 @@ python LSTMthreefold.py
 ```
 
 The SAIL route instruction dataset has been downloaded from [here](http://www.cs.utexas.edu/users/ml/clamp/navigation/).
-
-This project is built using Hongyuan Mei's [code](https://github.com/HMEIatJHU/NeuralWalker) as base. 
