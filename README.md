@@ -7,7 +7,7 @@ We have followed **two different approches** to solve this problem
 
 * This uses both high-level and low level representation of the input sentence to calculate the context vector. Refer [this](http://www.aaai.org/ocs/index.php/AAAI/AAAI16/paper/download/12522/12021) paper for the complete architecture. 
 
-* You can find PyCon talk 
+* [PyCon talk](https://www.youtube.com/watch?v=MJBWAkE7cEo) explains this approach. 
 
 * PyTorch implementation of this approach can be found in **MultiLevelAlignerBasedModel** folder.
 
